@@ -1,0 +1,16 @@
+services:
+  clipsync-relay:
+    image: clipsync-relay:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Put your downloaded .p8 file on the NAS first, then point this at it.
+      - /volume1/docker/clipsync-relay/AuthKey.p8:/keys/AuthKey.p8:ro
+    environment:
+      RELAY_KEY: "change-this-to-a-long-random-string"
+      APNS_KEY_ID: "your-key-id"
+      APNS_TEAM_ID: "your-team-id"
+      APNS_BUNDLE_ID: "com.sora.clipsync"
+      APNS_PRIVATE_KEY_PATH: "/keys/AuthKey.p8"
+      APNS_USE_SANDBOX: "true"

@@ -18,16 +18,18 @@ internal sealed class ClipSyncServer
 
     private readonly AppConfig _config;
     private readonly ClipboardStore _store;
+    private readonly DeviceStore _devices;
     private readonly List<WebSocket> _sockets = new();
     private readonly object _socketsLock = new();
     private WebApplication? _app;
 
     public event EventHandler<string>? RemoteClipboardReceived;
 
-    public ClipSyncServer(AppConfig config, ClipboardStore store)
+    public ClipSyncServer(AppConfig config, ClipboardStore store, DeviceStore devices)
     {
         _config = config;
         _store = store;
+        _devices = devices;
     }
 
     public async Task StartAsync()
@@ -73,6 +75,20 @@ internal sealed class ClipSyncServer
         {
             var (content, updatedAt) = _store.GetLatest();
             await context.Response.WriteAsJsonAsync(new { content, updatedAt });
+        });
+
+        app.MapPost("/devices/register", async context =>
+        {
+            var registration = await context.Request.ReadFromJsonAsync<DeviceRegistration>();
+
+            if (string.IsNullOrWhiteSpace(registration?.DeviceToken))
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                return;
+            }
+
+            _devices.Register(registration.DeviceToken);
+            context.Response.StatusCode = StatusCodes.Status204NoContent;
         });
 
         app.Map("/ws", async context =>
@@ -178,4 +194,6 @@ internal sealed class ClipSyncServer
             await _app.StopAsync();
         }
     }
+
+    private sealed record DeviceRegistration(string DeviceToken);
 }

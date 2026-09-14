@@ -12,6 +12,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private readonly ClipboardWatcher _clipboardWatcher;
     private readonly ClipSyncServer _server;
     private readonly ClipboardStore _store;
+    private readonly PushNotificationService _pushService;
     private readonly AppConfig _config;
     private readonly SynchronizationContext _uiContext;
 
@@ -25,10 +26,17 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         _store = new ClipboardStore();
 
+        var devices = new DeviceStore();
+        IPushSender pushSender = string.IsNullOrWhiteSpace(_config.RelayUrl)
+            ? new ApnsClient(_config)
+            : new RelayPushClient(_config);
+        _pushService = new PushNotificationService(devices, pushSender);
+        _store.Updated += (_, _) => _ = _pushService.NotifyAllAsync();
+
         _clipboardWatcher = new ClipboardWatcher();
         _clipboardWatcher.ClipboardTextChanged += OnLocalClipboardChanged;
 
-        _server = new ClipSyncServer(_config, _store);
+        _server = new ClipSyncServer(_config, _store, devices);
         _server.RemoteClipboardReceived += OnRemoteClipboardReceived;
         _ = _server.StartAsync();
 

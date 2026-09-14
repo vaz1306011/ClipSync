@@ -8,6 +8,21 @@ internal sealed class AppConfig
     public int Port { get; set; } = 8787;
     public string SharedSecret { get; set; } = string.Empty;
 
+    // APNs settings — fill these in manually after generating the .p8 key in
+    // the Apple Developer portal. Push notifications stay disabled until all
+    // four are set.
+    public string ApnsKeyId { get; set; } = string.Empty;
+    public string ApnsTeamId { get; set; } = string.Empty;
+    public string ApnsBundleId { get; set; } = string.Empty;
+    public string ApnsPrivateKeyPath { get; set; } = string.Empty;
+    public bool ApnsUseSandbox { get; set; } = true;
+
+    // If set, push wake-ups go through this relay (e.g. your NAS) instead of
+    // straight to Apple, so the .p8 never has to leave the relay's machine.
+    // Takes priority over the direct Apns* settings above when both are present.
+    public string? RelayUrl { get; set; }
+    public string? RelayKey { get; set; }
+
     private static string ConfigPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "ClipSync",
