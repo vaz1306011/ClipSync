@@ -11,6 +11,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private readonly NotifyIcon _trayIcon;
     private readonly ClipboardWatcher _clipboardWatcher;
     private readonly ClipSyncServer _server;
+    private readonly ClipboardStore _store;
     private readonly AppConfig _config;
     private readonly SynchronizationContext _uiContext;
 
@@ -22,12 +23,12 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         _config = AppConfig.LoadOrCreate();
 
-        var store = new ClipboardStore();
+        _store = new ClipboardStore();
 
         _clipboardWatcher = new ClipboardWatcher();
         _clipboardWatcher.ClipboardTextChanged += OnLocalClipboardChanged;
 
-        _server = new ClipSyncServer(_config, store);
+        _server = new ClipSyncServer(_config, _store);
         _server.RemoteClipboardReceived += OnRemoteClipboardReceived;
         _ = _server.StartAsync();
 
@@ -50,6 +51,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private void OnLocalClipboardChanged(object? sender, string text)
     {
+        _store.Set(text);
         _ = _server.BroadcastAsync(text);
     }
 
