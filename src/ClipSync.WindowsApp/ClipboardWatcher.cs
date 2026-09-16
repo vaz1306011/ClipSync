@@ -169,8 +169,10 @@ internal sealed class ClipboardWatcher : NativeWindow, IDisposable
             var dropList = new StringCollection { tempPath };
             Clipboard.SetFileDropList(dropList);
         }
-        catch (ExternalException)
+        catch (Exception)
         {
+            // Malformed payload from a client (bad image bytes, clipboard locked by
+            // another process, etc.) — never let this take down the whole app.
             _suppressNext = false;
         }
     }
