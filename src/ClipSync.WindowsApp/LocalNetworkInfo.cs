@@ -14,6 +14,10 @@ internal static class LocalNetworkInfo
         var candidates = NetworkInterface.GetAllNetworkInterfaces()
             .Where(nic => nic.OperationalStatus == OperationalStatus.Up)
             .Where(nic => nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+            // Hyper-V/WSL/VPN virtual adapters report as "up" but aren't reachable
+            // from other devices on the LAN, so only trust NICs with a real gateway.
+            .Where(nic => nic.GetIPProperties().GatewayAddresses
+                .Any(gw => gw.Address.AddressFamily == AddressFamily.InterNetwork))
             .SelectMany(nic => nic.GetIPProperties().UnicastAddresses)
             .Where(addr => addr.Address.AddressFamily == AddressFamily.InterNetwork)
             .Select(addr => addr.Address.ToString())
