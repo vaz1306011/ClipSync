@@ -3,30 +3,28 @@ namespace ClipSync.WindowsApp.Server;
 internal sealed class ClipboardStore
 {
     private readonly object _lock = new();
-    private string _latestContent = string.Empty;
-    private DateTimeOffset _updatedAt = DateTimeOffset.MinValue;
+    private ClipboardPayload _latest = ClipboardPayload.ForText(string.Empty);
 
     /// <summary>Fired after every Set, regardless of whether the change came from
     /// the local clipboard watcher or a remote client — the single point where
     /// APNs push-notify-all hooks in.</summary>
-    public event EventHandler<string>? Updated;
+    public event EventHandler<ClipboardPayload>? Updated;
 
-    public void Set(string text)
+    public void Set(ClipboardPayload payload)
     {
         lock (_lock)
         {
-            _latestContent = text;
-            _updatedAt = DateTimeOffset.UtcNow;
+            _latest = payload;
         }
 
-        Updated?.Invoke(this, text);
+        Updated?.Invoke(this, payload);
     }
 
-    public (string Content, DateTimeOffset UpdatedAt) GetLatest()
+    public ClipboardPayload GetLatest()
     {
         lock (_lock)
         {
-            return (_latestContent, _updatedAt);
+            return _latest;
         }
     }
 }

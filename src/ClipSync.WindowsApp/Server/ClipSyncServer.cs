@@ -1,5 +1,5 @@
 using System.Net.WebSockets;
-using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -23,7 +23,7 @@ internal sealed class ClipSyncServer
     private readonly object _socketsLock = new();
     private WebApplication? _app;
 
-    public event EventHandler<string>? RemoteClipboardReceived;
+    public event EventHandler<ClipboardPayload>? RemoteClipboardReceived;
 
     public ClipSyncServer(AppConfig config, ClipboardStore store, DeviceStore devices)
     {
@@ -55,26 +55,27 @@ internal sealed class ClipSyncServer
 
         app.MapPost("/clipboard", async context =>
         {
-            using var reader = new StreamReader(context.Request.Body);
-            var text = await reader.ReadToEndAsync();
+            var dto = await context.Request.ReadFromJsonAsync<ClipboardDto>();
 
-            if (string.IsNullOrEmpty(text))
+            if (dto is null || (dto.Type == "text" && string.IsNullOrEmpty(dto.Text)) ||
+                (dto.Type == "file" && (dto.Data is null || dto.Data.Length == 0)))
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 return;
             }
 
-            _store.Set(text);
-            RemoteClipboardReceived?.Invoke(this, text);
-            await BroadcastAsync(text);
+            var payload = dto.ToPayload();
+            _store.Set(payload);
+            RemoteClipboardReceived?.Invoke(this, payload);
+            await BroadcastAsync(payload);
 
             context.Response.StatusCode = StatusCodes.Status204NoContent;
         });
 
         app.MapGet("/clipboard/latest", async context =>
         {
-            var (content, updatedAt) = _store.GetLatest();
-            await context.Response.WriteAsJsonAsync(new { content, updatedAt });
+            var payload = _store.GetLatest();
+            await context.Response.WriteAsJsonAsync(ClipboardDto.From(payload));
         });
 
         app.MapPost("/devices/register", async context =>
@@ -125,30 +126,39 @@ internal sealed class ClipSyncServer
 
     private async Task ReceiveLoopAsync(WebSocket socket)
     {
-        var buffer = new byte[4096];
+        var buffer = new byte[8192];
 
         try
         {
             while (socket.State == WebSocketState.Open)
             {
-                var result = await socket.ReceiveAsync(buffer, CancellationToken.None);
+                using var messageStream = new MemoryStream();
+                WebSocketReceiveResult result;
 
-                if (result.MessageType == WebSocketMessageType.Close)
+                do
                 {
-                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
-                    break;
-                }
+                    result = await socket.ReceiveAsync(buffer, CancellationToken.None);
 
-                var text = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+                        return;
+                    }
 
-                if (string.IsNullOrEmpty(text))
+                    messageStream.Write(buffer, 0, result.Count);
+                } while (!result.EndOfMessage);
+
+                var dto = JsonSerializer.Deserialize<ClipboardDto>(messageStream.ToArray());
+
+                if (dto is null)
                 {
                     continue;
                 }
 
-                _store.Set(text);
-                RemoteClipboardReceived?.Invoke(this, text);
-                await BroadcastAsync(text, exclude: socket);
+                var payload = dto.ToPayload();
+                _store.Set(payload);
+                RemoteClipboardReceived?.Invoke(this, payload);
+                await BroadcastAsync(payload, exclude: socket);
             }
         }
         catch (WebSocketException)
@@ -164,9 +174,9 @@ internal sealed class ClipSyncServer
         }
     }
 
-    public async Task BroadcastAsync(string text, WebSocket? exclude = null)
+    public async Task BroadcastAsync(ClipboardPayload payload, WebSocket? exclude = null)
     {
-        var bytes = Encoding.UTF8.GetBytes(text);
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(ClipboardDto.From(payload));
         List<WebSocket> targets;
 
         lock (_socketsLock)

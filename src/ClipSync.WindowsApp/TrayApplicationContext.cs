@@ -25,7 +25,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _uiContext = SynchronizationContext.Current ?? new WindowsFormsSynchronizationContext();
 
         _clipboardWatcher = new ClipboardWatcher();
-        _clipboardWatcher.ClipboardTextChanged += OnLocalClipboardChanged;
+        _clipboardWatcher.ClipboardChanged += OnLocalClipboardChanged;
 
         _config = AppConfig.LoadOrCreate();
         (_store, _pushService, _server) = StartServerPipeline(_config);
@@ -92,21 +92,21 @@ internal sealed class TrayApplicationContext : ApplicationContext
         return $"監聽位址: {host}:{_config.Port}";
     }
 
-    private void OnLocalClipboardChanged(object? sender, string text)
+    private void OnLocalClipboardChanged(object? sender, ClipboardPayload payload)
     {
-        _store.Set(text);
-        _ = _server.BroadcastAsync(text);
+        _store.Set(payload);
+        _ = _server.BroadcastAsync(payload);
     }
 
-    private void OnRemoteClipboardReceived(object? sender, string text)
+    private void OnRemoteClipboardReceived(object? sender, ClipboardPayload payload)
     {
         // Fired from the server's async request handling, not the UI thread.
-        _uiContext.Post(_ => _clipboardWatcher.SetClipboardTextWithoutNotifying(text), null);
+        _uiContext.Post(_ => _clipboardWatcher.SetClipboardPayloadWithoutNotifying(payload), null);
     }
 
     private void CopyPairingKey()
     {
-        _clipboardWatcher.SetClipboardTextWithoutNotifying(_config.SharedSecret);
+        _clipboardWatcher.SetClipboardPayloadWithoutNotifying(ClipboardPayload.ForText(_config.SharedSecret));
         _trayIcon.ShowBalloonTip(2000, "ClipSync", "配對金鑰已複製到剪貼板", ToolTipIcon.Info);
     }
 
