@@ -5,7 +5,7 @@ namespace ClipSync.WindowsApp.Server;
 
 internal sealed class AppConfig
 {
-    public int Port { get; set; } = 8787;
+    public int Port { get; set; } = 913;
     public string SharedSecret { get; set; } = string.Empty;
 
     // APNs settings — fill these in manually after generating the .p8 key in
@@ -45,7 +45,7 @@ internal sealed class AppConfig
 
         var config = new AppConfig
         {
-            Port = 8787,
+            Port = 913,
             SharedSecret = GenerateSecret()
         };
 

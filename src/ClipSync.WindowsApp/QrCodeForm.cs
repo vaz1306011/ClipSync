@@ -1,0 +1,38 @@
+namespace ClipSync.WindowsApp;
+
+/// <summary>
+/// Shown on demand from the tray menu — the app otherwise has no main window.
+/// Scan this once in the iOS "setup" shortcut instead of typing the server
+/// URL and pairing key by hand.
+/// </summary>
+internal sealed class QrCodeForm : Form
+{
+    public QrCodeForm(Bitmap qrImage, string payload)
+    {
+        Text = "ClipSync 配對 QR Code";
+        FormBorderStyle = FormBorderStyle.FixedDialog;
+        MaximizeBox = false;
+        MinimizeBox = false;
+        StartPosition = FormStartPosition.CenterScreen;
+        ClientSize = new Size(320, 380);
+
+        var pictureBox = new PictureBox
+        {
+            Image = qrImage,
+            SizeMode = PictureBoxSizeMode.Zoom,
+            Location = new Point(20, 20),
+            Size = new Size(280, 280)
+        };
+
+        var hintLabel = new Label
+        {
+            Text = "用 Shortcuts 的「設定」捷徑掃這個 QR Code,\n伺服器網址跟配對金鑰會自動存起來。",
+            TextAlign = ContentAlignment.MiddleCenter,
+            Location = new Point(10, 310),
+            Size = new Size(300, 50)
+        };
+
+        Controls.Add(pictureBox);
+        Controls.Add(hintLabel);
+    }
+}

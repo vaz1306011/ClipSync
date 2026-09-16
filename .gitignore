@@ -34,5 +34,6 @@ Thumbs.db
 appsettings.Local.json
 .env
 .env.*
+!.env.example
 AuthKey_*.p8
 *.p8
