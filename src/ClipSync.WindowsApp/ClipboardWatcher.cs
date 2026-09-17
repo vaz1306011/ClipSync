@@ -17,6 +17,7 @@ internal sealed class ClipboardWatcher : NativeWindow, IDisposable
 
     private static readonly Dictionary<string, string> MimeTypesByExtension = new(StringComparer.OrdinalIgnoreCase)
     {
+        [".heic"] = "image/heic",
         [".png"] = "image/png",
         [".jpg"] = "image/jpeg",
         [".jpeg"] = "image/jpeg",
@@ -153,16 +154,13 @@ internal sealed class ClipboardWatcher : NativeWindow, IDisposable
             var data = payload.Data ?? [];
             var fileName = payload.FileName ?? "file";
 
-            if (payload.MimeType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true)
-            {
-                using var stream = new MemoryStream(data);
-                using var image = Image.FromStream(stream);
-                Clipboard.SetImage(image);
-                return;
-            }
-
-            // Non-image files: drop a real file in temp and put that on the
-            // clipboard, so pasting into Explorer/Outlook/etc. behaves normally.
+            // Always drop a real file — never try to paste as an inline bitmap.
+            // Windows only exposes ONE clipboard "winner" when both an image and
+            // a file-drop format are present (it prefers the bitmap and throws
+            // away the file name), and on machines with extra codecs installed
+            // (e.g. a HEIF extension) that silently swallows even formats we'd
+            // want to keep as real, named files. Explorer-pasteable and
+            // correctly named beats being directly pasteable as an image.
             var tempPath = Path.Combine(Path.GetTempPath(), fileName);
             File.WriteAllBytes(tempPath, data);
 
