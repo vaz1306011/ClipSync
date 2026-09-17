@@ -1,6 +1,5 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/ClipSync.RelayServer/ClipSync.RelayServer.csproj" />
     <Project Path="src/ClipSync.WindowsApp/ClipSync.WindowsApp.csproj" />
   </Folder>
 </Solution>
