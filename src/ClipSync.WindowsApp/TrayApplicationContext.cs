@@ -42,19 +42,19 @@ internal sealed class TrayApplicationContext : ApplicationContext
         var menu = new ContextMenuStrip();
         menu.Items.Add(_portMenuItem);
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(new ToolStripMenuItem("複製配對金鑰", null, (_, _) => CopyPairingKey()));
-        menu.Items.Add(new ToolStripMenuItem("顯示配對 QR Code", null, (_, _) => ShowPairingQrCode()));
+        menu.Items.Add(new ToolStripMenuItem("ペアリングキーをコピー", null, (_, _) => CopyPairingKey()));
+        menu.Items.Add(new ToolStripMenuItem("ペアリング QR コードを表示", null, (_, _) => ShowPairingQrCode()));
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(new ToolStripMenuItem("重新載入設定", null, (_, _) => _ = ReloadConfigAsync()));
+        menu.Items.Add(new ToolStripMenuItem("設定を再読み込み", null, (_, _) => _ = ReloadConfigAsync()));
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(new ToolStripMenuItem("結束", null, (_, _) => ExitApplication()));
+        menu.Items.Add(new ToolStripMenuItem("終了", null, (_, _) => ExitApplication()));
 
         _trayIcon.ContextMenuStrip = menu;
     }
 
     /// <summary>
     /// Builds the store/push/server trio for a given config. Used both at
-    /// startup and by "重新載入設定" — kept as one method so the two stay in sync.
+    /// startup and by "設定を再読み込み" — kept as one method so the two stay in sync.
     /// </summary>
     private (ClipboardStore Store, PushNotificationService PushService, ClipSyncServer Server) StartServerPipeline(AppConfig config)
     {
@@ -83,13 +83,13 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         _trayIcon.Text = $"ClipSync (port {_config.Port})";
         _portMenuItem.Text = GetDisplayAddressLabel();
-        _trayIcon.ShowBalloonTip(2000, "ClipSync", "設定已重新載入", ToolTipIcon.Info);
+        _trayIcon.ShowBalloonTip(2000, "ClipSync", "設定を再読み込みしました", ToolTipIcon.Info);
     }
 
     private string GetDisplayAddressLabel()
     {
-        var host = LocalNetworkInfo.GetLocalIPv4() ?? "未知";
-        return $"監聽位址: {host}:{_config.Port}";
+        var host = LocalNetworkInfo.GetLocalIPv4() ?? "不明";
+        return $"リッスンアドレス: {host}:{_config.Port}";
     }
 
     private void OnLocalClipboardChanged(object? sender, ClipboardPayload payload)
@@ -107,7 +107,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private void CopyPairingKey()
     {
         _clipboardWatcher.SetClipboardPayloadWithoutNotifying(ClipboardPayload.ForText(_config.SharedSecret));
-        _trayIcon.ShowBalloonTip(2000, "ClipSync", "配對金鑰已複製到剪貼板", ToolTipIcon.Info);
+        _trayIcon.ShowBalloonTip(2000, "ClipSync", "ペアリングキーをクリップボードにコピーしました", ToolTipIcon.Info);
     }
 
     private void ShowPairingQrCode()
@@ -116,7 +116,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         if (host is null)
         {
-            MessageBox.Show("找不到區網 IP,請確認電腦已連上 Wi-Fi 或有線網路。", "ClipSync",
+            MessageBox.Show("ローカルネットワークの IP が見つかりません。Wi-Fi または有線ネットワークに接続されているか確認してください。", "ClipSync",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }

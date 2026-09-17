@@ -9,7 +9,7 @@ internal sealed class QrCodeForm : Form
 {
     public QrCodeForm(Bitmap qrImage, string payload)
     {
-        Text = "ClipSync 配對 QR Code";
+        Text = "ClipSync ペアリング QR コード";
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -26,7 +26,7 @@ internal sealed class QrCodeForm : Form
 
         var hintLabel = new Label
         {
-            Text = "用 Shortcuts 的「設定」捷徑掃這個 QR Code,\n伺服器網址跟配對金鑰會自動存起來。",
+            Text = "ショートカットの「セットアップ」でこの QR コードを\nスキャンすると、サーバー URL とペアリングキーが自動的に保存されます。",
             TextAlign = ContentAlignment.MiddleCenter,
             Location = new Point(10, 310),
             Size = new Size(300, 50)
