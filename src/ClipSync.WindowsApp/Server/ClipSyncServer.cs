@@ -1,4 +1,5 @@
 using System.Net.WebSockets;
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -10,11 +11,38 @@ namespace ClipSync.WindowsApp.Server;
 /// <summary>
 /// Embedded Kestrel host shared by the native iOS app (APNs-woken fetch) and
 /// the Shortcuts client (polling): both talk to the same REST endpoints.
-/// Windows itself stays connected over the WebSocket for instant push.
+///
+/// Content travels as raw bytes, never Base64/JSON — metadata (type/fileName/
+/// mimeType) rides in headers on upload and in the small /clipboard/meta
+/// response on download, so a client (Shortcuts included) can fetch
+/// /clipboard/data and get a natively-typed result (Image, File, Text) based
+/// on the Content-Type header, with no manual encoding step on either side.
 /// </summary>
 internal sealed class ClipSyncServer
 {
     private const string AuthHeader = "X-ClipSync-Key";
+    private const string ContentTypeHeader = "X-Content-Type";
+    private const string FileNameHeader = "X-File-Name";
+    private const string ExtensionHeader = "X-Extension";
+
+    // The sender only tells us the file extension (locale-proof — Shortcuts'
+    // human-readable "type" names get translated, extensions never do); we
+    // build the actual file name and guess a MIME type from it here.
+    private static readonly Dictionary<string, string> MimeTypesByExtension = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["heic"] = "image/heic",
+        ["png"] = "image/png",
+        ["jpg"] = "image/jpeg",
+        ["jpeg"] = "image/jpeg",
+        ["gif"] = "image/gif",
+        ["pdf"] = "application/pdf",
+        ["txt"] = "text/plain",
+        ["zip"] = "application/zip",
+        ["doc"] = "application/msword",
+        ["docx"] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ["xls"] = "application/vnd.ms-excel",
+        ["xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    };
 
     private readonly AppConfig _config;
     private readonly ClipboardStore _store;
@@ -55,27 +83,70 @@ internal sealed class ClipSyncServer
 
         app.MapPost("/clipboard", async context =>
         {
-            var dto = await context.Request.ReadFromJsonAsync<ClipboardDto>();
+            var contentType = context.Request.Headers[ContentTypeHeader].ToString();
 
-            if (dto is null || (dto.Type == "text" && string.IsNullOrEmpty(dto.Text)) ||
-                (dto.Type == "file" && (dto.Data is null || dto.Data.Length == 0)))
+            using var bodyStream = new MemoryStream();
+            await context.Request.Body.CopyToAsync(bodyStream);
+            var bytes = bodyStream.ToArray();
+
+            if (bytes.Length == 0)
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 return;
             }
 
-            var payload = dto.ToPayload();
+            ClipboardPayload payload;
+
+            if (contentType == "file")
+            {
+                var extension = context.Request.Headers[ExtensionHeader].ToString().TrimStart('.');
+                var providedName = context.Request.Headers[FileNameHeader].ToString();
+                var fileName = providedName.Length > 0
+                    ? providedName
+                    : extension.Length > 0 ? $"clipboard.{extension}" : "clipboard";
+                var mimeType = extension.Length > 0 && MimeTypesByExtension.TryGetValue(extension, out var mime)
+                    ? mime
+                    : "application/octet-stream";
+
+                payload = ClipboardPayload.ForFile(fileName, mimeType, bytes);
+            }
+            else
+            {
+                payload = ClipboardPayload.ForText(Encoding.UTF8.GetString(bytes));
+            }
+
             _store.Set(payload);
             RemoteClipboardReceived?.Invoke(this, payload);
-            await BroadcastAsync(payload);
+            await BroadcastMetaAsync(payload);
 
             context.Response.StatusCode = StatusCodes.Status204NoContent;
         });
 
-        app.MapGet("/clipboard/latest", async context =>
+        app.MapGet("/clipboard/meta", async context =>
         {
             var payload = _store.GetLatest();
-            await context.Response.WriteAsJsonAsync(ClipboardDto.From(payload));
+            await context.Response.WriteAsJsonAsync(ToMetaDto(payload));
+        });
+
+        app.MapGet("/clipboard/data", async context =>
+        {
+            var payload = _store.GetLatest();
+
+            if (payload.Type == ClipboardContentType.Text)
+            {
+                context.Response.ContentType = "text/plain; charset=utf-8";
+                await context.Response.WriteAsync(payload.Text ?? string.Empty);
+                return;
+            }
+
+            context.Response.ContentType = payload.MimeType ?? "application/octet-stream";
+
+            // fileName is NOT echoed back as a header here — clients read it from
+            // the JSON /clipboard/meta response instead. Raw HTTP header values
+            // can't carry non-ASCII text, and Windows file names often do
+            // (e.g. a Japanese-locale default like "新規 文字文件.txt"), which
+            // would otherwise crash this response while writing headers.
+            await context.Response.Body.WriteAsync(payload.Data ?? []);
         });
 
         app.MapPost("/devices/register", async context =>
@@ -107,7 +178,7 @@ internal sealed class ClipSyncServer
                 _sockets.Add(socket);
             }
 
-            await ReceiveLoopAsync(socket);
+            await HoldOpenUntilClosedAsync(socket);
         });
 
         _app = app;
@@ -124,41 +195,32 @@ internal sealed class ClipSyncServer
         return string.Equals(value.ToString(), _config.SharedSecret, StringComparison.Ordinal);
     }
 
-    private async Task ReceiveLoopAsync(WebSocket socket)
+    private static ClipboardMetaDto ToMetaDto(ClipboardPayload payload) => new(
+        payload.Type == ClipboardContentType.File ? "file" : "text",
+        payload.FileName,
+        payload.MimeType,
+        payload.UpdatedAt);
+
+    /// <summary>
+    /// Windows-side sockets exist purely as a "something changed" push
+    /// channel — a connected client re-fetches /clipboard/meta and
+    /// /clipboard/data itself rather than receiving content inline here.
+    /// </summary>
+    private async Task HoldOpenUntilClosedAsync(WebSocket socket)
     {
-        var buffer = new byte[8192];
+        var buffer = new byte[1024];
 
         try
         {
             while (socket.State == WebSocketState.Open)
             {
-                using var messageStream = new MemoryStream();
-                WebSocketReceiveResult result;
+                var result = await socket.ReceiveAsync(buffer, CancellationToken.None);
 
-                do
+                if (result.MessageType == WebSocketMessageType.Close)
                 {
-                    result = await socket.ReceiveAsync(buffer, CancellationToken.None);
-
-                    if (result.MessageType == WebSocketMessageType.Close)
-                    {
-                        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
-                        return;
-                    }
-
-                    messageStream.Write(buffer, 0, result.Count);
-                } while (!result.EndOfMessage);
-
-                var dto = JsonSerializer.Deserialize<ClipboardDto>(messageStream.ToArray());
-
-                if (dto is null)
-                {
-                    continue;
+                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+                    break;
                 }
-
-                var payload = dto.ToPayload();
-                _store.Set(payload);
-                RemoteClipboardReceived?.Invoke(this, payload);
-                await BroadcastAsync(payload, exclude: socket);
             }
         }
         catch (WebSocketException)
@@ -174,14 +236,14 @@ internal sealed class ClipSyncServer
         }
     }
 
-    public async Task BroadcastAsync(ClipboardPayload payload, WebSocket? exclude = null)
+    public async Task BroadcastMetaAsync(ClipboardPayload payload)
     {
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(ClipboardDto.From(payload));
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(ToMetaDto(payload));
         List<WebSocket> targets;
 
         lock (_socketsLock)
         {
-            targets = _sockets.Where(s => s.State == WebSocketState.Open && s != exclude).ToList();
+            targets = _sockets.Where(s => s.State == WebSocketState.Open).ToList();
         }
 
         foreach (var socket in targets)
@@ -207,3 +269,5 @@ internal sealed class ClipSyncServer
 
     private sealed record DeviceRegistration(string DeviceToken);
 }
+
+internal sealed record ClipboardMetaDto(string Type, string? FileName, string? MimeType, DateTimeOffset UpdatedAt);

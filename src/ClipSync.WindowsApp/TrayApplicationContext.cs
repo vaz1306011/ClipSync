@@ -95,7 +95,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private void OnLocalClipboardChanged(object? sender, ClipboardPayload payload)
     {
         _store.Set(payload);
-        _ = _server.BroadcastAsync(payload);
+        _ = _server.BroadcastMetaAsync(payload);
     }
 
     private void OnRemoteClipboardReceived(object? sender, ClipboardPayload payload)
