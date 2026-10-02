@@ -37,3 +37,6 @@ appsettings.Local.json
 !.env.example
 AuthKey_*.p8
 *.p8
+
+## Publish output
+publish/
