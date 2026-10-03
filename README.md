@@ -7,7 +7,7 @@ Windows と iPhone の間でクリップボードをリアルタイムに同期�
 | 対象    | 内容                     | リンク                                                              |
 | ------- | ------------------------ | ------------------------------------------------------------------- |
 | Windows | 最新の Release（zip）    | <https://github.com/vaz1306011/ClipSync/releases/latest>            |
-| iPhone  | Shortcuts ショートカット | <https://www.icloud.com/shortcuts/249ea8c75f0445c3a05a082ec6fc564e> |
+| iPhone  | Shortcuts ショートカット | <https://www.icloud.com/shortcuts/8fd10748b3ca494eaf19d899d190c8c3> |
 
 - Windows 版は [.NET 10 デスクトップ ランタイム](https://dotnet.microsoft.com/ja-jp/download/dotnet/10.0)が必要です（未インストールの場合は先にインストールしてください）。
 - ショートカットは iPhone の Safari でリンクを開き、「ショートカットを追加」をタップして保存します。
