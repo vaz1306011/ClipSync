@@ -6,9 +6,7 @@ Windows と iPhone の間でクリップボードをリアルタイムに同期�
 
 ### Windows
 
-[最新の Release（zip）をダウンロード](https://github.com/vaz1306011/ClipSync/releases/latest)
-
-[.NET 10 デスクトップ ランタイム](https://dotnet.microsoft.com/ja-jp/download/dotnet/10.0)が必要です（未インストールの場合は先にインストールしてください）。
+[最新の Release をダウンロード](https://github.com/vaz1306011/ClipSync/releases/latest)
 
 ### iPhone
 
@@ -20,7 +18,7 @@ Safari でリンクを開き、「ショートカットを追加」をタップ�
 
 ## 使い方
 
-1. 上記リンクから最新の Release の zip をダウンロードして展開し、`ClipSync.WindowsApp.exe` を起動する（システムトレイに常駐する）
+1. 上記リンクから最新の Release から `ClipSync.WindowsApp.exe` をダウンロードして起動する（システムトレイに常駐する）
 2. iPhone にショートカットを追加する
 3. ショートカットを初めて実行すると QR コードのスキャンを求められるので、Windows のトレイメニューから「ペアリング QR コードを表示」を開いてスキャンする（サーバー URL とキーが自動保存され、以降は不要）
 4. ショートカットはループ処理になっており、実行中は数秒おきに双方のクリップボードを比較して自動的に同期する

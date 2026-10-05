@@ -23,13 +23,13 @@ jobs:
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
           dotnet publish src/ClipSync.WindowsApp/ClipSync.WindowsApp.csproj `
-            -c Release -r win-x64 --self-contained false `
+            -c Release -r win-x64 --self-contained true `
             -p:Version=$version -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
             -o publish
-          Compress-Archive -Path publish/* -DestinationPath "ClipSync-${{ github.ref_name }}-win-x64.zip"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ClipSync-${{ github.ref_name }}-win-x64.zip
+          files: publish/ClipSync.WindowsApp.exe
           generate_release_notes: true
