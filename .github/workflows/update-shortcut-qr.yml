@@ -1,0 +1,37 @@
+name: Update shortcut QR code
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - README.md
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-qr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - run: pip install "qrcode[pil]"
+
+      - run: python scripts/update_shortcut_qr.py
+
+      - name: Commit updated QR code
+        run: |
+          if git diff --quiet -- docs/shortcut-qr.png; then
+            echo "QR code unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/shortcut-qr.png
+          git commit -m "ショートカットのQRコードを更新"
+          git push
