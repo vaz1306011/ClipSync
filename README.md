@@ -10,7 +10,7 @@ Windows と iPhone の間でクリップボードをリアルタイムに同期�
 
 ### iPhone
 
-[Shortcuts ショートカットを開く](https://www.icloud.com/shortcuts/8fd10748b3ca494eaf19d899d190c8c3)
+[Shortcuts ショートカットを開く](https://www.icloud.com/shortcuts/53703918479549869180d8c095528262)
 
 Safari でリンクを開き、「ショートカットを追加」をタップして保存します。下の QR コードを iPhone のカメラで読み取ってもリンクを開けます。
 
