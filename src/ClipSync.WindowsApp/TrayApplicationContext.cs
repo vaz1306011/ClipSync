@@ -42,7 +42,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
         var menu = new ContextMenuStrip();
         menu.Items.Add(_portMenuItem);
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(new ToolStripMenuItem("ペアリングキーをコピー", null, (_, _) => CopyPairingKey()));
         menu.Items.Add(new ToolStripMenuItem("ペアリング QR コードを表示", null, (_, _) => ShowPairingQrCode()));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem("設定を再読み込み", null, (_, _) => _ = ReloadConfigAsync()));
@@ -102,12 +101,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
     {
         // Fired from the server's async request handling, not the UI thread.
         _uiContext.Post(_ => _clipboardWatcher.SetClipboardPayloadWithoutNotifying(payload), null);
-    }
-
-    private void CopyPairingKey()
-    {
-        _clipboardWatcher.SetClipboardPayloadWithoutNotifying(ClipboardPayload.ForText(_config.SharedSecret));
-        _trayIcon.ShowBalloonTip(2000, "ClipSync", "ペアリングキーをクリップボードにコピーしました", ToolTipIcon.Info);
     }
 
     private void ShowPairingQrCode()
