@@ -101,6 +101,25 @@ internal sealed class ClipSyncServer
             {
                 var extension = context.Request.Headers[ExtensionHeader].ToString().TrimStart('.');
                 var providedName = context.Request.Headers[FileNameHeader].ToString();
+
+                // iOS copies photos as HEIC, which most Windows apps can't paste.
+                if (extension.Equals("heic", StringComparison.OrdinalIgnoreCase)
+                    || extension.Equals("heif", StringComparison.OrdinalIgnoreCase))
+                {
+                    var png = await HeicConverter.TryConvertToPngAsync(bytes);
+
+                    if (png is not null)
+                    {
+                        bytes = png;
+                        extension = "png";
+
+                        if (providedName.Length > 0)
+                        {
+                            providedName = Path.ChangeExtension(providedName, "png");
+                        }
+                    }
+                }
+
                 var fileName = providedName.Length > 0
                     ? providedName
                     : extension.Length > 0 ? $"clipboard.{extension}" : "clipboard";
