@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text.RegularExpressions;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -97,9 +99,17 @@ internal sealed class ClipSyncServer
 
             ClipboardPayload payload;
 
-            if (contentType == "file")
+            var extension = context.Request.Headers[ExtensionHeader].ToString().TrimStart('.');
+
+            // iOS reports a copied web address as an .html item, so the shortcut
+            // uploads it as a file — either the bare URL or the fetched page.
+            // Recover the address and treat it as text.
+            if (contentType == "file" && IsHtmlExtension(extension) && TryGetUrlText(bytes) is { } urlText)
             {
-                var extension = context.Request.Headers[ExtensionHeader].ToString().TrimStart('.');
+                payload = ClipboardPayload.ForText(urlText);
+            }
+            else if (contentType == "file")
+            {
                 var providedName = context.Request.Headers[FileNameHeader].ToString();
 
                 // iOS copies photos as HEIC, which most Windows apps can't paste.
@@ -202,6 +212,42 @@ internal sealed class ClipSyncServer
 
         _app = app;
         await app.StartAsync();
+    }
+
+    private static bool IsHtmlExtension(string extension) =>
+        extension.Equals("html", StringComparison.OrdinalIgnoreCase)
+        || extension.Equals("htm", StringComparison.OrdinalIgnoreCase);
+
+    private static readonly Regex PageUrlRegex = new(
+        "<meta[^>]+property=[\"']og:url[\"'][^>]+content=[\"']([^\"']+)[\"']"
+        + "|<link[^>]+rel=[\"']canonical[\"'][^>]+href=[\"']([^\"']+)[\"']",
+        RegexOptions.IgnoreCase);
+
+    private static string? TryGetUrlText(byte[] bytes)
+    {
+        if (bytes.Length > 512 * 1024)
+        {
+            return null;
+        }
+
+        if (bytes.Length > 4096 || Encoding.UTF8.GetString(bytes).TrimStart().StartsWith('<'))
+        {
+            var match = PageUrlRegex.Match(Encoding.UTF8.GetString(bytes));
+            var pageUrl = WebUtility.HtmlDecode(match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value);
+
+            return Uri.TryCreate(pageUrl, UriKind.Absolute, out var u)
+                && (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps)
+                ? pageUrl
+                : null;
+        }
+
+        var text = Encoding.UTF8.GetString(bytes).Trim();
+
+        return Uri.TryCreate(text, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+            && !text.Any(char.IsWhiteSpace)
+            ? text
+            : null;
     }
 
     private bool IsAuthorized(HttpContext context)
