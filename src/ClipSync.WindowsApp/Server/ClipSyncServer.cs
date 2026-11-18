@@ -113,6 +113,12 @@ internal sealed class ClipSyncServer
             {
                 payload = ClipboardPayload.ForText(urlText);
             }
+            // Text copied from iOS Notes arrives as an .rtf item; paste it as text.
+            else if (contentType == "file" && RtfConverter.IsRtfExtension(extension)
+                && RtfConverter.TryConvertToText(bytes) is { } rtfText)
+            {
+                payload = ClipboardPayload.ForText(rtfText);
+            }
             else if (contentType == "file")
             {
                 var providedName = context.Request.Headers[FileNameHeader].ToString();
