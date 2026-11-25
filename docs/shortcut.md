@@ -130,26 +130,30 @@ ClipSync 的 iPhone 端是 iOS「捷徑」，名稱 **ClipSync v3.0.2**，共 **
 | 捷徑動作 | 呼叫 | Windows 端程式 |
 |---|---|---|
 | 11–13 | 配對 QR 內容 `{"url","key"}` | `PairingQrCode.cs:12` `BuildPayload` |
-| 21、53 | `GET /clipboard/meta` | `ClipSyncServer.cs:125`；回傳 `ClipboardMetaDto(type, fileName, mimeType, updatedAt)`（`ClipSyncServer.cs:273`，camelCase JSON） |
-| 38、47 | `POST /clipboard` | `ClipSyncServer.cs:84–123` |
-| 64 | `GET /clipboard/data` | `ClipSyncServer.cs:131–150` |
-| 所有請求的 `X-ClipSync-Key` | 驗證 | `ClipSyncServer.cs:72–82`、`IsAuthorized` `:188`（不符回 401） |
+| 21、53 | `GET /clipboard/meta` | `ClipSyncServer.cs:181`；回傳 `ClipboardMetaDto(type, fileName, mimeType, updatedAt)`（`ClipSyncServer.cs:365`，camelCase JSON） |
+| 38、47 | `POST /clipboard` | `ClipSyncServer.cs:90–156` |
+| 64 | `GET /clipboard/data` | `ClipSyncServer.cs:187–206` |
+| 所有請求的 `X-ClipSync-Key` | 驗證 | `ClipSyncServer.cs:78–88`、`IsAuthorized` `:280`（不符回 401） |
 
 ### 兩邊必須一致的約定
 
 | 約定 | 捷徑端 | Windows 端 | 改一邊要改另一邊 |
 |---|---|---|---|
-| 認證 header 名稱 | `X-ClipSync-Key`（21、38、47、53、64） | `AuthHeader` `ClipSyncServer.cs:23` | 捷徑 5 個請求都要改 |
-| 內容種類 header | `X-Content-Type: text`／`file`（38、47） | `ContentTypeHeader` `:24`、判斷 `:100`（只有 `"file"` 走檔案，其他都當文字） | 38、47 |
-| 副檔名 header | `X-Extension`（47） | `ExtensionHeader` `:26`；決定 MIME `:107` 與檔名 `clipboard.<副檔名>` `:106` | 47 |
-| 檔名 header | 捷徑**沒有送** `X-File-Name` | `FileNameHeader` `:25`（有送才覆蓋預設檔名） | 若想自訂檔名，需在 47 加 header |
-| meta 欄位名 | 讀 `updatedAt`、`type`、`fileName`（24/56、58、60） | `ClipboardMetaDto` `:273` | 56、58、60 的鍵名 |
-| meta `type` 值 | 與 `"file"` 比較（65） | `ToMetaDto` `:199`（只會是 `"file"` 或 `"text"`） | 65 |
-| 端點路徑 | `/clipboard/meta`、`/clipboard`、`/clipboard/data` | `MapGet/MapPost` `:84、:125、:131` | 21、38、47、53、64 |
-| 下載回應 | 66、69 直接把 URL 內容設為剪貼簿，靠 `Content-Type` 判斷類型 | 文字 `text/plain; charset=utf-8`（`:137`）；檔案 `payload.MimeType`（`:142`） | MIME 表在 `:31–45`，沒列到的副檔名會變 `application/octet-stream` |
+| 認證 header 名稱 | `X-ClipSync-Key`（21、38、47、53、64） | `AuthHeader` `ClipSyncServer.cs:25` | 捷徑 5 個請求都要改 |
+| 內容種類 header | `X-Content-Type: text`／`file`（38、47） | `ContentTypeHeader` `:26`、判斷 `:111、:115`（只有 `"file"` 走檔案，其他都當文字） | 38、47 |
+| 副檔名 header | `X-Extension`（47） | `ExtensionHeader` `:28`；決定 MIME `:140` 與檔名 `clipboard.<副檔名>` `:139` | 47 |
+| 檔名 header | 捷徑**沒有送** `X-File-Name` | `FileNameHeader` `:27`（有送才覆蓋預設檔名） | 若想自訂檔名，需在 47 加 header |
+| meta 欄位名 | 讀 `updatedAt`、`type`、`fileName`（24/56、58、60） | `ClipboardMetaDto` `:365` | 56、58、60 的鍵名 |
+| meta `type` 值 | 與 `"file"` 比較（65） | `ToMetaDto` `:290`（只會是 `"file"` 或 `"text"`） | 65 |
+| 端點路徑 | `/clipboard/meta`、`/clipboard`、`/clipboard/data` | `MapGet/MapPost` `:90、:181、:187` | 21、38、47、53、64 |
+| 下載回應 | 66、69 直接把 URL 內容設為剪貼簿，靠 `Content-Type` 判斷類型 | 文字 `text/plain; charset=utf-8`（`:193`）；檔案 `payload.MimeType`（`:198`） | MIME 表在 `:34–48`，沒列到的副檔名會變 `application/octet-stream` |
 | 配對 QR | 12 取文字、13 解析、15/16 取 `url`/`key` | `PairingQrCode.BuildPayload` JSON 鍵名 `url`、`key` | 6、7、15、16 的鍵名 |
 | 輪詢間隔 | 77 等待（預設 1 秒） | 無對應 | 只在捷徑端調 |
 | port | 由 QR 的 `url` 帶入 | `AppConfig` 的 Port（預設 913） | 不用改捷徑，重新配對即可 |
+
+## Windows 端已有、捷徑尚未使用的端點
+
+`POST /otp`（`ClipSyncServer.cs:160`）：header `X-ClipSync-Key`，body 為 SMS 全文（UTF-8 純文字，上限 8 KB）。Windows 端用 `OtpExtractor` 抽出驗證碼後跳通知，點擊才複製；抓不到驗證碼也回 204。
 
 ## 觀察到的細節（不是已確認的 bug，改邏輯前先知道）
 
