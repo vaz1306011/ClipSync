@@ -1,4 +1,5 @@
 using ClipSync.WindowsApp.Server;
+using Microsoft.Toolkit.Uwp.Notifications;
 
 namespace ClipSync.WindowsApp;
 
@@ -18,8 +19,9 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private PushNotificationService _pushService;
     private ClipSyncServer _server;
 
-    // The code behind the notification currently on screen, if it's an OTP one.
-    private string? _pendingOtp;
+    // Toast argument carrying the code, so each entry in the notification
+    // center copies its own one.
+    private const string OtpArgument = "otp";
 
     public TrayApplicationContext()
     {
@@ -40,7 +42,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
             Text = $"ClipSync (port {_config.Port})"
         };
 
-        _trayIcon.BalloonTipClicked += (_, _) => CopyPendingOtp();
+        // Also delivers the click that launched the app, if it wasn't running.
+        ToastNotificationManagerCompat.OnActivated += OnToastActivated;
 
         _portMenuItem = new ToolStripMenuItem(GetDisplayAddressLabel()) { Enabled = false };
 
@@ -88,7 +91,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         _trayIcon.Text = $"ClipSync (port {_config.Port})";
         _portMenuItem.Text = GetDisplayAddressLabel();
-        _pendingOtp = null;
         _trayIcon.ShowBalloonTip(2000, "ClipSync", "設定を再読み込みしました", ToolTipIcon.Info);
     }
 
@@ -110,26 +112,28 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _uiContext.Post(_ => _clipboardWatcher.SetClipboardPayloadWithoutNotifying(payload), null);
     }
 
+    // A toast rather than a balloon tip: it stays in the Windows notification
+    // center after it leaves the screen, and can still be clicked there.
     private void OnOtpReceived(object? sender, string code)
     {
-        _uiContext.Post(_ =>
-        {
-            _pendingOtp = code;
-            _trayIcon.ShowBalloonTip(10000, "ClipSync", $"認証コード {code} — クリックでコピー", ToolTipIcon.Info);
-        }, null);
+        new ToastContentBuilder()
+            .AddArgument(OtpArgument, code)
+            .AddText($"認証コード {code}")
+            .AddText("クリックでコピー")
+            .Show();
     }
 
     // Copying only on click leaves the clipboard alone until the code is wanted.
     // The non-notifying write also keeps the code from syncing back to the phone.
-    private void CopyPendingOtp()
+    private void OnToastActivated(ToastNotificationActivatedEventArgsCompat e)
     {
-        if (_pendingOtp is null)
+        if (!ToastArguments.Parse(e.Argument).TryGetValue(OtpArgument, out var code))
         {
             return;
         }
 
-        _clipboardWatcher.SetClipboardPayloadWithoutNotifying(ClipboardPayload.ForText(_pendingOtp));
-        _pendingOtp = null;
+        // Fired on a background thread, not the UI thread.
+        _uiContext.Post(_ => _clipboardWatcher.SetClipboardPayloadWithoutNotifying(ClipboardPayload.ForText(code)), null);
     }
 
     private void ShowPairingQrCode()
