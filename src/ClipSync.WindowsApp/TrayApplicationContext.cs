@@ -51,6 +51,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         var menu = new ContextMenuStrip();
         menu.Items.Add(_portMenuItem);
+        menu.Items.Add(new ToolStripMenuItem("設定...", null, (_, _) => ShowSettings()));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem("ペアリング QR コードを表示", null, (_, _) => ShowPairingQrCode()));
         menu.Items.Add(new ToolStripSeparator());
@@ -82,6 +83,12 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _ = server.StartAsync();
 
         return (store, pushService, server);
+    }
+
+    private void ShowSettings()
+    {
+        using var form = new SettingsForm();
+        form.ShowDialog();
     }
 
     private async Task ReloadConfigAsync()
