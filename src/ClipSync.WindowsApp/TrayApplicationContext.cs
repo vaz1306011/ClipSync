@@ -18,6 +18,9 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private PushNotificationService _pushService;
     private ClipSyncServer _server;
 
+    // The code behind the notification currently on screen, if it's an OTP one.
+    private string? _pendingOtp;
+
     public TrayApplicationContext()
     {
         // Clipboard access must happen on this STA UI thread; the server's handlers
@@ -36,6 +39,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
             Visible = true,
             Text = $"ClipSync (port {_config.Port})"
         };
+
+        _trayIcon.BalloonTipClicked += (_, _) => CopyPendingOtp();
 
         _portMenuItem = new ToolStripMenuItem(GetDisplayAddressLabel()) { Enabled = false };
 
@@ -68,6 +73,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         var server = new ClipSyncServer(config, store, devices);
         server.RemoteClipboardReceived += OnRemoteClipboardReceived;
+        server.OtpReceived += OnOtpReceived;
         _ = server.StartAsync();
 
         return (store, pushService, server);
@@ -82,6 +88,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         _trayIcon.Text = $"ClipSync (port {_config.Port})";
         _portMenuItem.Text = GetDisplayAddressLabel();
+        _pendingOtp = null;
         _trayIcon.ShowBalloonTip(2000, "ClipSync", "設定を再読み込みしました", ToolTipIcon.Info);
     }
 
@@ -101,6 +108,28 @@ internal sealed class TrayApplicationContext : ApplicationContext
     {
         // Fired from the server's async request handling, not the UI thread.
         _uiContext.Post(_ => _clipboardWatcher.SetClipboardPayloadWithoutNotifying(payload), null);
+    }
+
+    private void OnOtpReceived(object? sender, string code)
+    {
+        _uiContext.Post(_ =>
+        {
+            _pendingOtp = code;
+            _trayIcon.ShowBalloonTip(10000, "ClipSync", $"認証コード {code} — クリックでコピー", ToolTipIcon.Info);
+        }, null);
+    }
+
+    // Copying only on click leaves the clipboard alone until the code is wanted.
+    // The non-notifying write also keeps the code from syncing back to the phone.
+    private void CopyPendingOtp()
+    {
+        if (_pendingOtp is null)
+        {
+            return;
+        }
+
+        _clipboardWatcher.SetClipboardPayloadWithoutNotifying(ClipboardPayload.ForText(_pendingOtp));
+        _pendingOtp = null;
     }
 
     private void ShowPairingQrCode()

@@ -26,6 +26,7 @@ internal sealed class ClipSyncServer
     private const string ContentTypeHeader = "X-Content-Type";
     private const string FileNameHeader = "X-File-Name";
     private const string ExtensionHeader = "X-Extension";
+    private const int MaxOtpMessageBytes = 8 * 1024;
 
     // The sender only tells us the file extension (locale-proof — Shortcuts'
     // human-readable "type" names get translated, extensions never do); we
@@ -54,6 +55,9 @@ internal sealed class ClipSyncServer
     private WebApplication? _app;
 
     public event EventHandler<ClipboardPayload>? RemoteClipboardReceived;
+
+    /// <summary>Fired with the code extracted from an SMS posted to /otp.</summary>
+    public event EventHandler<string>? OtpReceived;
 
     public ClipSyncServer(AppConfig config, ClipboardStore store, DeviceStore devices)
     {
@@ -147,6 +151,29 @@ internal sealed class ClipSyncServer
             _store.Set(payload);
             RemoteClipboardReceived?.Invoke(this, payload);
             await BroadcastMetaAsync(payload);
+
+            context.Response.StatusCode = StatusCodes.Status204NoContent;
+        });
+
+        // Takes a whole SMS body. Only the extracted code is passed on: the
+        // message isn't stored, and never enters the synced clipboard.
+        app.MapPost("/otp", async context =>
+        {
+            using var bodyStream = new MemoryStream();
+            await context.Request.Body.CopyToAsync(bodyStream);
+
+            if (bodyStream.Length is 0 or > MaxOtpMessageBytes)
+            {
+                context.Response.StatusCode = bodyStream.Length == 0
+                    ? StatusCodes.Status400BadRequest
+                    : StatusCodes.Status413PayloadTooLarge;
+                return;
+            }
+
+            if (OtpExtractor.Extract(Encoding.UTF8.GetString(bodyStream.ToArray())) is { } code)
+            {
+                OtpReceived?.Invoke(this, code);
+            }
 
             context.Response.StatusCode = StatusCodes.Status204NoContent;
         });
