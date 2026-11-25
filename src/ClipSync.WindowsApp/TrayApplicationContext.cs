@@ -23,6 +23,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
     // center copies its own one.
     private const string OtpArgument = "otp";
 
+    private OtpPopupForm? _otpPopup;
+
     public TrayApplicationContext()
     {
         // Clipboard access must happen on this STA UI thread; the server's handlers
@@ -112,15 +114,33 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _uiContext.Post(_ => _clipboardWatcher.SetClipboardPayloadWithoutNotifying(payload), null);
     }
 
-    // A toast rather than a balloon tip: it stays in the Windows notification
-    // center after it leaves the screen, and can still be clicked there.
-    private void OnOtpReceived(object? sender, string code)
+    private void OnOtpReceived(object? sender, string code) => _ = NotifyOtpAsync(code);
+
+    private async Task NotifyOtpAsync(string code)
     {
+        // Looking for the caret asks other apps, so don't wait on a hung one.
+        var search = Task.Run(TextInputLocator.Find);
+        var target = await Task.WhenAny(search, Task.Delay(1500)) == search && search.IsCompletedSuccessfully
+            ? search.Result
+            : null;
+
+        if (target is not null)
+        {
+            _uiContext.Post(_ =>
+            {
+                _otpPopup?.Close();
+                _otpPopup = OtpPopupForm.ShowFor(code, target);
+            }, null);
+        }
+
+        // A toast rather than a balloon tip: it stays in the Windows notification
+        // center, and can still be clicked there. With the popup up it goes there
+        // silently, as the record of the code.
         new ToastContentBuilder()
             .AddArgument(OtpArgument, code)
             .AddText($"認証コード {code}")
             .AddText("クリックでコピー")
-            .Show();
+            .Show(toast => toast.SuppressPopup = target is not null);
     }
 
     // Copying only on click leaves the clipboard alone until the code is wanted.
