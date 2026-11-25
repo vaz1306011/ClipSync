@@ -67,7 +67,7 @@ iPhone（Shortcuts）
 | `POST`   | `/clipboard`      | テキストまたはファイルをアップロード（生のバイト列。ファイルの場合は `X-Content-Type: file`、`X-File-Name`、`X-Extension` ヘッダーを付与） |
 | `GET`    | `/clipboard/meta` | 現在のクリップボードのメタ情報（種類・ファイル名・MIME・更新日時）を取得                                                                   |
 | `GET`    | `/clipboard/data` | 現在のクリップボードの実体（生のバイト列）を取得                                                                                           |
-| `POST`   | `/otp`            | SMS 本文（UTF-8 テキスト、8 KB まで）から認証コードを抽出して通知。クリップボードの同期内容は変更しない                                                        |
+| `POST`   | `/otp`            | SMS 本文（UTF-8 テキスト、8 KB まで）から認証コードを抽出して通知。クリップボードの同期内容は変更しない                                    |
 
 ## 開発
 
