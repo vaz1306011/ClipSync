@@ -26,7 +26,7 @@ internal sealed class ClipSyncServer
     private const string ContentTypeHeader = "X-Content-Type";
     private const string FileNameHeader = "X-File-Name";
     private const string ExtensionHeader = "X-Extension";
-    private const int MaxOtpMessageBytes = 8 * 1024;
+    private const int MaxOtpBodyBytes = 64 * 1024;
 
     // The sender only tells us the file extension (locale-proof — Shortcuts'
     // human-readable "type" names get translated, extensions never do); we
@@ -52,6 +52,7 @@ internal sealed class ClipSyncServer
     private readonly DeviceStore _devices;
     private readonly List<WebSocket> _sockets = new();
     private readonly object _socketsLock = new();
+    private readonly OtpInbox _otpInbox = new();
     private WebApplication? _app;
 
     public event EventHandler<ClipboardPayload>? RemoteClipboardReceived;
@@ -155,14 +156,15 @@ internal sealed class ClipSyncServer
             context.Response.StatusCode = StatusCodes.Status204NoContent;
         });
 
-        // Takes a whole SMS body. Only the extracted code is passed on: the
-        // message isn't stored, and never enters the synced clipboard.
+        // Takes one or more whole message bodies (see OtpInbox). Only extracted
+        // codes are passed on: messages aren't stored, and never enter the synced
+        // clipboard.
         app.MapPost("/otp", async context =>
         {
             using var bodyStream = new MemoryStream();
             await context.Request.Body.CopyToAsync(bodyStream);
 
-            if (bodyStream.Length is 0 or > MaxOtpMessageBytes)
+            if (bodyStream.Length is 0 or > MaxOtpBodyBytes)
             {
                 context.Response.StatusCode = bodyStream.Length == 0
                     ? StatusCodes.Status400BadRequest
@@ -170,7 +172,9 @@ internal sealed class ClipSyncServer
                 return;
             }
 
-            if (OtpExtractor.Extract(Encoding.UTF8.GetString(bodyStream.ToArray())) is { } code)
+            var body = Encoding.UTF8.GetString(bodyStream.ToArray());
+
+            foreach (var code in _otpInbox.TakeNewCodes(body, DateTimeOffset.UtcNow))
             {
                 OtpReceived?.Invoke(this, code);
             }

@@ -114,7 +114,20 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _uiContext.Post(_ => _clipboardWatcher.SetClipboardPayloadWithoutNotifying(payload), null);
     }
 
-    private void OnOtpReceived(object? sender, string code) => _ = NotifyOtpAsync(code);
+    // Several codes can arrive in one request; announce them in order, so the
+    // popup left on screen is the newest one's.
+    private readonly object _otpNotificationsLock = new();
+    private Task _otpNotifications = Task.CompletedTask;
+
+    private void OnOtpReceived(object? sender, string code)
+    {
+        lock (_otpNotificationsLock)
+        {
+            _otpNotifications = _otpNotifications
+                .ContinueWith(_ => NotifyOtpAsync(code), TaskScheduler.Default)
+                .Unwrap();
+        }
+    }
 
     private async Task NotifyOtpAsync(string code)
     {
