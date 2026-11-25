@@ -3,7 +3,7 @@
 ClipSync 的 iPhone 端是 iOS「捷徑」，名稱 **ClipSync v3.0.2**，共 **78 個動作**。
 本文件是從實際捷徑檔解析出來的，動作編號與捷徑 App 裡由上到下的順序一致（註解也算一個動作）。
 
-- 分享連結：https://www.icloud.com/shortcuts/53703918479549869180d8c095528262（README.md 第 13 行，commit `6d5aa97`）
+- 分享連結：https://www.icloud.com/shortcuts/8205c3dfd71549cf9a78eb36c2d4ba07（README.md 第 13 行）
 - 原始檔：[ClipSync.shortcut](ClipSync.shortcut)（未簽章 binary plist，由上面連結的 `shortcut` 欄位下載）
 - 重新解析：`python scripts/dump_shortcut.py docs/ClipSync.shortcut`
 - 更新捷徑後：重新下載檔案、覆蓋 `ClipSync.shortcut`、重跑解析，並更新本文件與 README 連結。
@@ -37,7 +37,7 @@ ClipSync 的 iPhone 端是 iOS「捷徑」，名稱 **ClipSync v3.0.2**，共 **
 | 1 | 註解 | `init` |
 | 2 | 註解 | `get host config` |
 | 3 | 建立資料夾 | 在「我的iPhone」捷徑儲存位置建立 `ClipSync` |
-| 4 | 取得檔案 | 路徑 `ClipSync/clipsync-config.json`，找不到時**不報錯** |
+| 4 | 取得檔案 | 「我的iPhone」的 `ClipSync` 資料夾下的 `clipsync-config.json`，找不到時**不報錯** |
 | 5 | 如果 | 動作 4 的「檔案」**有任何值** |
 | 6 | 取得辭典值 | 從「檔案」取 `url` |
 | 7 | 取得辭典值 | 從「檔案」取 `key` |
@@ -47,7 +47,7 @@ ClipSync 的 iPhone 端是 iOS「捷徑」，名稱 **ClipSync v3.0.2**，共 **
 | 11 | 掃描 QR／條碼 | 掃 Windows 托盤「ペアリング QR コードを表示」的 QR |
 | 12 | 取得文字 | 從條碼取文字（JSON：`{"url":..., "key":...}`，見 `PairingQrCode.cs:12`） |
 | 13 | 取得辭典 | 從文字解析成辭典 |
-| 14 | 儲存檔案 | 存到 iCloud Drive 的捷徑資料夾 `ClipSync/clipsync-config.json`，**覆寫**，不詢問位置 |
+| 14 | 儲存檔案 | 存到與動作 4 相同的位置（「我的iPhone」的 `ClipSync/clipsync-config.json`），**覆寫**，不詢問位置 |
 | 15 | 取得辭典值 | 取 `url` |
 | 16 | 取得辭典值 | 取 `key` |
 | 17 | 設定變數 | `url` |
@@ -162,14 +162,14 @@ ClipSync 的 iPhone 端是 iOS「捷徑」，名稱 **ClipSync v3.0.2**，共 **
 - 36 的判斷用「副檔名」：副檔名是 `txt` 或空 → 文字；其他（如 `png`、`heic`、`pdf`）→ 檔案。圖片從相簿複製時副檔名通常有值，所以走檔案分支。
 - 文字上傳的判斷看「內容有沒有變」（37），檔案則看「大小有沒有變」（46）；兩個不同大小但不同內容的檔案連續複製不會被偵測到，大小相同的檔案也不會重傳。
 - 66 與 69 的動作完全相同，檔案與文字分支目前沒有差別。
-- 4 讀的是「我的iPhone」捷徑本機儲存位置下的 `ClipSync/clipsync-config.json`，14 存的是 iCloud Drive 捷徑資料夾下的 `ClipSync/clipsync-config.json`；兩者是否為同一份，需在手機上確認。
 - 61 的 `RemoteFileName` 沒有被使用。
 
 ## 連結沿革（新到舊）
 
 | 日期 | commit | 連結 ID | 備註 |
 |---|---|---|---|
-| 2026-10-08 | `6d5aa97` | `53703918479549869180d8c095528262` | 目前版本，ClipSync v3.0.2 |
+| 2026-11-25 | — | `8205c3dfd71549cf9a78eb36c2d4ba07` | 目前版本，名稱仍是 ClipSync v3.0.2；設定檔的讀取與儲存統一為「我的iPhone」同一位置 |
+| 2026-10-08 | `6d5aa97` | `53703918479549869180d8c095528262` | 讀取在「我的iPhone」、儲存在 iCloud Drive |
 | 2026-10-05 前 | — | `8fd10748b3ca494eaf19d899d190c8c3` | |
 | 2026-10-03 | `de8026d` | — | 「初回同期の上書き修正版」：修正首次同步時手機內容覆蓋電腦剛複製內容的問題（B 段的初始基準應是這次的修正，但尚未與舊版比對確認） |
 | 2026-10-02 | — | `9f1789c0cf96416c…`、`249ea8c75f0445c3a05a082…` | README 早期版本（ID 尾碼已截斷） |
