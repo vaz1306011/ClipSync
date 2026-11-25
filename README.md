@@ -81,3 +81,69 @@ dotnet run --project src/ClipSync.WindowsApp
 ```
 
 `v*` タグを push すると、GitHub Actions が自動的にビルドして Release を作成します。
+
+## プログラムの調整方法
+
+以下のファイルは、特に断りがなければ [src/ClipSync.WindowsApp](src/ClipSync.WindowsApp) からの相対パスです。
+
+### 機能と実装場所
+
+| 機能                                       | 主な実装場所                                                                  |
+| ------------------------------------------ | ----------------------------------------------------------------------------- |
+| 起動                                       | `Program.cs`                                                                  |
+| トレイメニュー、各部品の接続、通知         | `TrayApplicationContext.cs`                                                   |
+| Windows のクリップボードの監視・書き込み   | `ClipboardWatcher.cs`                                                         |
+| HTTP API、キー認証、アップロード内容の判定 | `Server/ClipSyncServer.cs`                                                    |
+| 同期中の内容の保持                         | `Server/ClipboardStore.cs`、`Server/ClipboardPayload.cs`                      |
+| HEIC → PNG 変換                            | `Server/HeicConverter.cs`                                                     |
+| 設定ファイル（`config.json`）              | `Server/AppConfig.cs`                                                         |
+| ペアリング QR コード                       | `PairingQrCode.cs`（内容と画像）、`QrCodeForm.cs`（画面）                     |
+| QR コードに入れる IP アドレスの選択        | `LocalNetworkInfo.cs`                                                         |
+| 認証コードの抽出                           | `Server/OtpExtractor.cs`                                                      |
+| 受信済みメッセージの除外                   | `Server/OtpInbox.cs`                                                          |
+| 認証コードの浮動ボタン                     | `OtpPopupForm.cs`                                                             |
+| 入力欄・カーソル位置の検出                 | `TextInputLocator.cs`                                                         |
+| コードの直接入力                           | `KeyboardTyper.cs`                                                            |
+| Win32 API の共通呼び出し                   | `NativeMethods.cs`                                                            |
+| iOS アプリ向けのサイレントプッシュ         | `Server/PushNotificationService.cs`、`ApnsClient.cs`、`RelayPushClient.cs` 他 |
+
+### よくある変更
+
+| 変えたいこと                         | 変更する場所                                                                                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| ポート番号（自分の環境だけ）         | `%AppData%\ClipSync\config.json` の `Port` を変更し、「設定を再読み込み」の後に再ペアリング                                    |
+| ポート番号の初期値                   | `Server/AppConfig.cs` の `Port`（プロパティの初期値と `LoadOrCreate` の 2 か所）                                               |
+| 対応する拡張子と MIME タイプ         | `MimeTypesByExtension`。`Server/ClipSyncServer.cs`（受信、`.` なし）と `ClipboardWatcher.cs`（送信、`.` あり）の両方にある    |
+| API の追加                           | `Server/ClipSyncServer.cs` の `StartAsync`（キー認証はすべてのパスに適用される）                                               |
+| トレイメニューの項目                 | `TrayApplicationContext.cs` のコンストラクター                                                                                 |
+| 認証コードとみなす条件               | `Server/OtpExtractor.cs` の `KeywordRegex`（キーワード）、`CodeRegex`（桁数など）                                              |
+| `/otp` の上限サイズ                  | `Server/ClipSyncServer.cs` の `MaxOtpBodyBytes`                                                                                |
+| 同じメッセージを無視する時間         | `Server/OtpInbox.cs` の `Memory`                                                                                               |
+| 浮動ボタンの表示時間・大きさ・見た目 | `OtpPopupForm.cs` の `LifetimeMilliseconds`、`BaseWidth` / `BaseHeight`、コンストラクター（色）、`OnPaint`（文字・アイコン） |
+
+ペアリング情報は iPhone 側の `ClipSync/clipsync-config.json` に保存されます。再ペアリングするには、このファイルを削除してからショートカットを実行してください。
+
+### ショートカットの変更
+
+ショートカットの全アクション、使用している変数、Windows 側との対応は [docs/shortcut.md](docs/shortcut.md)（中国語）にまとめています。
+
+次の項目は両側で一致させる必要があります。片方を変えたら、もう片方も変更してください。
+
+- API のパス（`/clipboard`、`/clipboard/meta`、`/clipboard/data`）
+- ヘッダー名（`X-ClipSync-Key`、`X-Content-Type`、`X-Extension`）
+- `/clipboard/meta` の項目名（`updatedAt`、`type`、`fileName`）と `type` の値（`text` / `file`）
+- ペアリング QR コードの項目名（`url`、`key`）
+- `/otp` の区切り文字（`OtpInbox.Separator`。現在のショートカットは `/otp` 未対応）
+
+同期の間隔はショートカットだけで変更できます（ループ末尾の「待機」アクション）。
+
+変更を公開する手順：
+
+1. iPhone のショートカットアプリで編集し、共有メニューから新しい iCloud リンクをコピーする
+2. この README の「iPhone」にあるリンクを差し替える（QR コード `docs/shortcut-qr.png` は、`main` に push すると GitHub Actions が更新する）
+3. `https://www.icloud.com/shortcuts/api/records/<リンクの ID>` を開き、`fields.shortcut.value.downloadURL` の URL（`${f}` は任意のファイル名に置き換える）からダウンロードして `docs/ClipSync.shortcut` を上書きする
+4. 内容を解析して、[docs/shortcut.md](docs/shortcut.md) を更新する
+
+```bash
+python3 scripts/dump_shortcut.py docs/ClipSync.shortcut
+```
