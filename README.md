@@ -10,7 +10,7 @@ Windows と iPhone の間でクリップボードをリアルタイムに同期�
 
 ### iPhone
 
-[Shortcuts ショートカットを開く](https://www.icloud.com/shortcuts/8205c3dfd71549cf9a78eb36c2d4ba07)
+[Shortcuts ショートカットを開く](https://www.icloud.com/shortcuts/f55c3e0c46c745fdbeb86d426d88a71f)
 
 Safari でリンクを開き、「ショートカットを追加」をタップして保存します。下の QR コードを iPhone のカメラで読み取ってもリンクを開けます。
 
@@ -67,7 +67,7 @@ iPhone（Shortcuts）
 | `POST`   | `/clipboard`      | テキストまたはファイルをアップロード（生のバイト列。ファイルの場合は `X-Content-Type: file`、`X-File-Name`、`X-Extension` ヘッダーを付与） |
 | `GET`    | `/clipboard/meta` | 現在のクリップボードのメタ情報（種類・ファイル名・MIME・更新日時）を取得                                                                   |
 | `GET`    | `/clipboard/data` | 現在のクリップボードの実体（生のバイト列）を取得                                                                                           |
-| `POST`   | `/otp`            | SMS 本文（UTF-8 テキスト、64 KB まで。複数は `<<ClipSync:next>>` 区切り、新しい順）から認証コードを抽出して通知。処理済みは無視する   |
+| `POST`   | `/otp`            | SMS 本文（UTF-8 テキスト、64 KB まで。複数は `<<ClipSync:next>>` 区切り、新しい順）から認証コードを抽出して通知。処理済みは無視する        |
 
 ## 開発
 
@@ -109,16 +109,16 @@ dotnet run --project src/ClipSync.WindowsApp
 
 ### よくある変更
 
-| 変えたいこと                         | 変更する場所                                                                                                                   |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| ポート番号（自分の環境だけ）         | `%AppData%\ClipSync\config.json` の `Port` を変更し、「設定を再読み込み」の後に再ペアリング                                    |
-| ポート番号の初期値                   | `Server/AppConfig.cs` の `Port`（プロパティの初期値と `LoadOrCreate` の 2 か所）                                               |
-| 対応する拡張子と MIME タイプ         | `MimeTypesByExtension`。`Server/ClipSyncServer.cs`（受信、`.` なし）と `ClipboardWatcher.cs`（送信、`.` あり）の両方にある    |
-| API の追加                           | `Server/ClipSyncServer.cs` の `StartAsync`（キー認証はすべてのパスに適用される）                                               |
-| トレイメニューの項目                 | `TrayApplicationContext.cs` のコンストラクター                                                                                 |
-| 認証コードとみなす条件               | `Server/OtpExtractor.cs` の `KeywordRegex`（キーワード）、`CodeRegex`（桁数など）                                              |
-| `/otp` の上限サイズ                  | `Server/ClipSyncServer.cs` の `MaxOtpBodyBytes`                                                                                |
-| 同じメッセージを無視する時間         | `Server/OtpInbox.cs` の `Memory`                                                                                               |
+| 変えたいこと                         | 変更する場所                                                                                                                 |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| ポート番号（自分の環境だけ）         | `%AppData%\ClipSync\config.json` の `Port` を変更し、「設定を再読み込み」の後に再ペアリング                                  |
+| ポート番号の初期値                   | `Server/AppConfig.cs` の `Port`（プロパティの初期値と `LoadOrCreate` の 2 か所）                                             |
+| 対応する拡張子と MIME タイプ         | `MimeTypesByExtension`。`Server/ClipSyncServer.cs`（受信、`.` なし）と `ClipboardWatcher.cs`（送信、`.` あり）の両方にある   |
+| API の追加                           | `Server/ClipSyncServer.cs` の `StartAsync`（キー認証はすべてのパスに適用される）                                             |
+| トレイメニューの項目                 | `TrayApplicationContext.cs` のコンストラクター                                                                               |
+| 認証コードとみなす条件               | `Server/OtpExtractor.cs` の `KeywordRegex`（キーワード）、`CodeRegex`（桁数など）                                            |
+| `/otp` の上限サイズ                  | `Server/ClipSyncServer.cs` の `MaxOtpBodyBytes`                                                                              |
+| 同じメッセージを無視する時間         | `Server/OtpInbox.cs` の `Memory`                                                                                             |
 | 浮動ボタンの表示時間・大きさ・見た目 | `OtpPopupForm.cs` の `LifetimeMilliseconds`、`BaseWidth` / `BaseHeight`、コンストラクター（色）、`OnPaint`（文字・アイコン） |
 
 ペアリング情報は iPhone 側の `ClipSync/clipsync-config.json` に保存されます。再ペアリングするには、このファイルを削除してからショートカットを実行してください。
