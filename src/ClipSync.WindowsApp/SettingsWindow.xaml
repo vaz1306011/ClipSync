@@ -1,0 +1,141 @@
+<ui:FluentWindow
+    x:Class="ClipSync.WindowsApp.SettingsWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="ClipSync の設定"
+    Width="820"
+    Height="700"
+    MinWidth="560"
+    MinHeight="420"
+    WindowStartupLocation="CenterScreen"
+    ResizeMode="CanResize">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="Transparent" MouseLeftButtonDown="Header_MouseLeftButtonDown">
+            <StackPanel Margin="28,12,28,18">
+                <TextBlock FontSize="25" FontWeight="SemiBold" Text="設定" />
+                <TextBlock Margin="0,5,0,0" Opacity="0.72" Text="ClipSync の動作と接続を設定します。" />
+            </StackPanel>
+        </Border>
+
+        <TabControl Grid.Row="1" Margin="20,0,20,14">
+            <TabItem Header="一般">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="12">
+                        <ui:Card Margin="0,0,0,14">
+                            <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="起動" />
+                                <CheckBox Margin="0,5" Content="Windows へのサインイン時に ClipSync を起動する" />
+                                <CheckBox Margin="0,5" Content="クリップボード同期を一時停止する" />
+                            </StackPanel>
+                        </ui:Card>
+                        <ui:Card Margin="0,0,0,14">
+                            <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="通知" />
+                                <TextBlock Margin="0,3,0,6" Text="認証コードの通知方法" />
+                                <ComboBox Width="300" HorizontalAlignment="Left" SelectedIndex="0">
+                                    <ComboBoxItem Content="トースト通知" />
+                                    <ComboBoxItem Content="入力欄の近くにボタン" />
+                                    <ComboBoxItem Content="両方" />
+                                </ComboBox>
+                                <CheckBox Margin="0,12,0,4" Content="通知時にコードを自動コピーする" />
+                                <TextBlock Margin="0,12,0,5" Text="コードボタンの表示時間 (秒)" />
+                                <TextBox Width="120" HorizontalAlignment="Left" Text="60" />
+                            </StackPanel>
+                        </ui:Card>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="同期">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="12">
+                        <ui:Card Margin="0,0,0,14">
+                            <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="クリップボード" />
+                                <CheckBox Margin="0,5" Content="同期を有効にする" IsChecked="True" />
+                                <CheckBox Margin="0,5" Content="テキストを同期する" IsChecked="True" />
+                                <CheckBox Margin="0,5" Content="画像を同期する" IsChecked="True" />
+                                <CheckBox Margin="0,5" Content="ファイルを同期する" IsChecked="True" />
+                            </StackPanel>
+                        </ui:Card>
+                        <ui:Card Margin="0,0,0,14">
+                            <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="ファイル" />
+                                <TextBlock Margin="0,3,0,6" Text="サイズ上限 (MB、0 は無制限)" />
+                                <TextBox Width="140" HorizontalAlignment="Left" Text="0" />
+                                <CheckBox Margin="0,12,0,4" Content="クリップボード監視の処理から除外する" />
+                            </StackPanel>
+                        </ui:Card>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="認証コード">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="12">
+                        <ui:Card Margin="0,0,0,14">
+                            <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="検出" />
+                                <CheckBox Margin="0,5" Content="認証コードの検出を有効にする" IsChecked="True" />
+                                <TextBlock Margin="0,12,0,5" Text="キーワード (1 行に 1 つ)" />
+                                <TextBox Height="100" AcceptsReturn="True" Text="認証&#x0a;確認コード&#x0a;code&#x0a;verification" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                            </StackPanel>
+                        </ui:Card>
+                        <ui:Card Margin="0,0,0,14">
+                            <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="詳細" />
+                                <TextBlock Margin="0,3,0,5" Text="追加の正規表現" />
+                                <TextBox />
+                                <CheckBox Margin="0,10,0,4" Content="検出前に文字を NFKC 正規化する" IsChecked="True" />
+                                <CheckBox Margin="0,4" Content="検出前に URL を除外する" IsChecked="True" />
+                                <Button Margin="0,12,0,0" HorizontalAlignment="Left" Content="正規表現をテスト" />
+                            </StackPanel>
+                        </ui:Card>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="接続">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="12">
+                        <ui:Card Margin="0,0,0,14">
+                            <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="サーバー" />
+                                <TextBlock Margin="0,3,0,5" Text="ポート番号" />
+                                <TextBox Width="140" HorizontalAlignment="Left" Text="913" />
+                                <TextBlock Margin="0,12,0,5" Text="共有キー" />
+                                <PasswordBox Width="320" HorizontalAlignment="Left" />
+                                <CheckBox Margin="0,10,0,4" Content="共有キーを表示" />
+                            </StackPanel>
+                        </ui:Card>
+                        <ui:Card Margin="0,0,0,14">
+                            <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="ペアリング" />
+                                <TextBlock Margin="0,0,0,10" Opacity="0.72" Text="QR コードを使って iPhone と接続します。" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Margin="0,0,8,0" Content="QR コードを表示" />
+                                    <Button Content="共有キーを再生成" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ui:Card>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2" BorderBrush="#22000000" BorderThickness="0,1,0,0" Padding="20,14,24,18">
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                <ui:Button MinWidth="96" Margin="0,0,8,0" Content="適用" IsEnabled="False" />
+                <ui:Button MinWidth="96" Margin="0,0,8,0" Content="キャンセル" Click="Cancel_Click" />
+                <ui:Button MinWidth="96" Content="OK" Click="Ok_Click" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</ui:FluentWindow>
