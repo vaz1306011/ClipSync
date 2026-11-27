@@ -3,7 +3,8 @@ namespace ClipSync.WindowsApp.Server;
 internal sealed class ClipboardStore
 {
     private readonly object _lock = new();
-    private static readonly ClipboardPayload Empty = ClipboardPayload.ForText(string.Empty) with { UpdatedAt = DateTimeOffset.MinValue };
+    /// <summary>Stands for "nothing to hand out"; compared by reference.</summary>
+    public static readonly ClipboardPayload Empty =ClipboardPayload.ForText(string.Empty) with { UpdatedAt = DateTimeOffset.MinValue };
     private ClipboardPayload _latest = Empty;
 
     /// <summary>Fired after every Set, regardless of whether the change came from
