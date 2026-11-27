@@ -159,22 +159,13 @@
                             <StackPanel Margin="18">
                                 <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="起動" />
                                 <CheckBox Margin="0,5" x:Name="StartOnSignInBox" Content="Windows へのサインイン時に ClipSync を起動する" />
-                                <CheckBox Margin="0,5" x:Name="SyncPausedBox" Content="クリップボード同期を一時停止する" />
-                            </StackPanel>
-                        </ui:Card>
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="通知" />
-                                <TextBlock Margin="0,3,0,6" Text="認証コードの通知方法" />
-                                <ComboBox x:Name="NotificationModePicker" Width="300" HorizontalAlignment="Left" SelectedIndex="0">
-                                    <ComboBoxItem Content="トースト通知" />
-                                    <ComboBoxItem Content="入力欄の近くにボタン" />
-                                    <ComboBoxItem Content="両方" />
-                                </ComboBox>
-                                <CheckBox Margin="0,12,0,4" x:Name="CopyOtpAutomaticallyBox" Content="通知時にコードを自動コピーする" />
-                                <TextBlock Margin="0,12,0,5" Text="コードボタンの表示時間 (秒)" />
-                                <TextBox Width="120" HorizontalAlignment="Left" x:Name="PopupSecondsBox" />
+                                <DockPanel Margin="0,5">
+                                    <ui:ToggleSwitch x:Name="SyncPausedBox" DockPanel.Dock="Right"
+                                                     AutomationProperties.Name="クリップボード同期を一時停止する"
+                                                     OnContent="オン" OffContent="オフ" />
+                                    <TextBlock VerticalAlignment="Center" TextWrapping="Wrap"
+                                               Text="クリップボード同期を一時停止する" />
+                                </DockPanel>
                             </StackPanel>
                         </ui:Card>
                     </StackPanel>
@@ -188,7 +179,6 @@
                                  BorderBrush="{DynamicResource SettingsCardBorderBrush}">
                             <StackPanel Margin="18">
                                 <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="クリップボード" />
-                                <CheckBox Margin="0,5" x:Name="SyncEnabledBox" Content="同期を有効にする" IsChecked="True" />
                                 <CheckBox Margin="0,5" x:Name="SyncTextBox" Content="テキストを同期する" IsChecked="True" />
                                 <CheckBox Margin="0,5" x:Name="SyncImagesBox" Content="画像を同期する" IsChecked="True" />
                                 <CheckBox Margin="0,5" x:Name="SyncFilesBox" Content="ファイルを同期する" IsChecked="True" />
@@ -210,6 +200,21 @@
             <TabItem Header="認証コード">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="0,0,8,0">
+                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
+                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
+                            <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="通知" />
+                                <TextBlock Margin="0,3,0,6" Text="認証コードの通知方法" />
+                                <ComboBox x:Name="NotificationModePicker" Width="300" HorizontalAlignment="Left" SelectedIndex="0">
+                                    <ComboBoxItem Content="トースト通知" />
+                                    <ComboBoxItem Content="入力欄の近くにボタン" />
+                                    <ComboBoxItem Content="両方" />
+                                </ComboBox>
+                                <CheckBox Margin="0,12,0,4" x:Name="CopyOtpAutomaticallyBox" Content="通知時にコードを自動コピーする" />
+                                <TextBlock Margin="0,12,0,5" Text="コードボタンの表示時間 (秒)" />
+                                <TextBox Width="120" HorizontalAlignment="Left" x:Name="PopupSecondsBox" />
+                            </StackPanel>
+                        </ui:Card>
                         <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
                                  BorderBrush="{DynamicResource SettingsCardBorderBrush}">
                             <StackPanel Margin="18">
@@ -242,6 +247,14 @@
                         <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
                                  BorderBrush="{DynamicResource SettingsCardBorderBrush}">
                             <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="ペアリング" />
+                                <TextBlock Margin="0,0,0,10" Opacity="0.72" Text="QR コードを使って iPhone と接続します。" />
+                                <Button HorizontalAlignment="Left" Content="QR コードを表示" Click="ShowPairingQrCode_Click" />
+                            </StackPanel>
+                        </ui:Card>
+                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
+                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
+                            <StackPanel Margin="18">
                                 <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="サーバー" />
                                 <TextBlock Margin="0,3,0,5" Text="ポート番号" />
                                 <TextBox Width="140" HorizontalAlignment="Left" x:Name="PortBox" />
@@ -251,17 +264,7 @@
                                     <TextBox x:Name="VisibleKeyBox" IsReadOnly="True" Visibility="Collapsed" />
                                 </Grid>
                                 <CheckBox Margin="0,10,0,4" x:Name="ShowKeyBox" Content="共有キーを表示" Click="ShowKey_Click" />
-                            </StackPanel>
-                        </ui:Card>
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="ペアリング" />
-                                <TextBlock Margin="0,0,0,10" Opacity="0.72" Text="QR コードを使って iPhone と接続します。" />
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Margin="0,0,8,0" Content="QR コードを表示" Click="ShowPairingQrCode_Click" />
-                                    <Button Content="共有キーを再生成" Click="RegenerateKey_Click" />
-                                </StackPanel>
+                                <Button Margin="0,8,0,0" HorizontalAlignment="Left" Content="共有キーを再生成" Click="RegenerateKey_Click" />
                             </StackPanel>
                         </ui:Card>
                     </StackPanel>

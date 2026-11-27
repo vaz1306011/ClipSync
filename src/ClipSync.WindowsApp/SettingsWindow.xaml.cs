@@ -32,8 +32,7 @@ public partial class SettingsWindow : FluentWindow
         var theme = (config.DarkTheme ?? (ReadTheme() == ApplicationTheme.Dark))
             ? ApplicationTheme.Dark : ApplicationTheme.Light;
         StartOnSignInBox.IsChecked = config.StartOnSignIn;
-        SyncPausedBox.IsChecked = config.SyncPaused;
-        SyncEnabledBox.IsChecked = config.SyncEnabled;
+        SyncPausedBox.IsChecked = config.SyncPaused || !config.SyncEnabled;
         SyncTextBox.IsChecked = config.SyncText;
         SyncImagesBox.IsChecked = config.SyncImages;
         SyncFilesBox.IsChecked = config.SyncFiles;
@@ -157,7 +156,7 @@ public partial class SettingsWindow : FluentWindow
         var next = _savedConfig.Copy();
         next.StartOnSignIn = StartOnSignInBox.IsChecked == true;
         next.SyncPaused = SyncPausedBox.IsChecked == true;
-        next.SyncEnabled = SyncEnabledBox.IsChecked == true;
+        next.SyncEnabled = true;
         next.SyncText = SyncTextBox.IsChecked == true;
         next.SyncImages = SyncImagesBox.IsChecked == true;
         next.SyncFiles = SyncFilesBox.IsChecked == true;
