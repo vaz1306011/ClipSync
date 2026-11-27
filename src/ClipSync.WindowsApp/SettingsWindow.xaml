@@ -274,7 +274,7 @@
 
         <Border Grid.Row="2" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" Padding="20,14,24,18">
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                <ui:Button MinWidth="96" Margin="0,0,8,0" Content="適用" Click="Apply_Click" />
+                <ui:Button MinWidth="96" Margin="0,0,8,0" x:Name="ApplyButton" Content="適用" Visibility="Collapsed" Click="Apply_Click" />
                 <ui:Button MinWidth="96" Margin="0,0,8,0" Content="キャンセル" Click="Cancel_Click" />
                 <ui:Button MinWidth="96" Content="OK" Click="Ok_Click" />
             </StackPanel>

@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Markup;
@@ -19,6 +20,7 @@ public partial class SettingsWindow : FluentWindow
     private readonly Func<AppConfig, Task> _applySettings;
     private AppConfig _savedConfig;
     private string _sharedKey;
+    private object?[] _savedValues;
     private bool _saving;
     private bool _allowClose;
 
@@ -51,7 +53,30 @@ public partial class SettingsWindow : FluentWindow
         ApplyTheme(theme);
         ThemePicker.SelectedIndex = theme == ApplicationTheme.Dark ? 1 : 0;
         ThemePicker.SelectionChanged += ThemePicker_SelectionChanged;
+
+        _savedValues = CaptureSettingsValues();
+        AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnSettingsEdited));
+        AddHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnSettingsEdited));
+        AddHandler(ToggleButton.CheckedEvent, new RoutedEventHandler(OnSettingsEdited));
+        AddHandler(ToggleButton.UncheckedEvent, new RoutedEventHandler(OnSettingsEdited));
     }
+
+    private object?[] CaptureSettingsValues() =>
+    [
+        ThemePicker.SelectedIndex, StartOnSignInBox.IsChecked, SyncPausedBox.IsChecked,
+        SyncTextBox.IsChecked, SyncImagesBox.IsChecked, SyncFilesBox.IsChecked,
+        FileLimitBox.Text.Trim(), IgnoreLocalFilesBox.IsChecked, NotificationModePicker.SelectedIndex,
+        CopyOtpAutomaticallyBox.IsChecked, PopupSecondsBox.Text.Trim(), DetectOtpBox.IsChecked,
+        KeywordsBox.Text, PatternBox.Text.Trim(), NormalizeOtpBox.IsChecked, ExcludeOtpUrlsBox.IsChecked,
+        PortBox.Text.Trim(), _sharedKey
+    ];
+
+    private void OnSettingsEdited(object sender, RoutedEventArgs e) => UpdateApplyVisibility();
+
+    private void UpdateApplyVisibility() =>
+        ApplyButton.Visibility = CaptureSettingsValues().SequenceEqual(_savedValues)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
 
     private static ApplicationTheme ReadTheme()
     {
@@ -125,6 +150,7 @@ public partial class SettingsWindow : FluentWindow
         {
             _sharedKey = AppConfig.GenerateSecret();
             UpdateKeyDisplay();
+            UpdateApplyVisibility();
         }
     }
 
@@ -197,6 +223,8 @@ public partial class SettingsWindow : FluentWindow
             ((FrameworkElement)Content).IsEnabled = false;
             await _applySettings(next);
             _savedConfig = next;
+            _savedValues = CaptureSettingsValues();
+            UpdateApplyVisibility();
             return true;
         }
         catch (Exception ex)
