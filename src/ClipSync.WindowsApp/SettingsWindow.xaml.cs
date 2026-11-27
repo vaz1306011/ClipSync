@@ -249,15 +249,18 @@ public partial class SettingsWindow : FluentWindow
     {
         if (await SaveAsync())
         {
-            _allowClose = true;
-            DialogResult = true;
+            CloseWithoutSaving();
         }
     }
 
-    private void Cancel_Click(object sender, RoutedEventArgs e)
+    private void Cancel_Click(object sender, RoutedEventArgs e) => CloseWithoutSaving();
+
+    // Close, unlike DialogResult, is safe if the window is already gone, which
+    // happens when the app exits while a save is in progress.
+    internal void CloseWithoutSaving()
     {
         _allowClose = true;
-        DialogResult = false;
+        Close();
     }
 
     protected override async void OnClosing(CancelEventArgs e)

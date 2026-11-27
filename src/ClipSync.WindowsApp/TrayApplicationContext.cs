@@ -19,7 +19,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private volatile AppConfig _config;
     private readonly SemaphoreSlim _settingsLock = new(1);
     private Task _serverStart;
-    private bool _settingsOpen;
+    private SettingsWindow? _settingsWindow;
+    private bool _exitRequested;
     private ClipboardStore _store;
     private PushNotificationService _pushService;
     private ClipSyncServer _server;
@@ -70,19 +71,21 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private void ShowSettings()
     {
-        if (_settingsOpen)
+        if (_settingsWindow is not null)
             return;
 
-        _settingsOpen = true;
         try
         {
-            var window = new SettingsWindow(_config, ApplySettingsAsync, ShowPairingQrCode);
-            window.ShowDialog();
+            _settingsWindow = new SettingsWindow(_config, ApplySettingsAsync, ShowPairingQrCode);
+            _settingsWindow.ShowDialog();
         }
         finally
         {
-            _settingsOpen = false;
+            _settingsWindow = null;
         }
+
+        if (_exitRequested)
+            ExitApplication();
     }
 
     /// <summary>
@@ -109,7 +112,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private async Task ReloadConfigAsync()
     {
-        if (_settingsOpen)
+        if (_settingsWindow is not null)
             return;
 
         try
@@ -326,6 +329,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private void ExitApplication()
     {
+        // The settings window runs its own modal loop: close it first, and
+        // ShowSettings comes back here once that loop has ended.
+        if (_settingsWindow is not null)
+        {
+            _exitRequested = true;
+            _settingsWindow.CloseWithoutSaving();
+            return;
+        }
+
         _trayIcon.Visible = false;
         _clipboardWatcher.Dispose();
         _ = _server.StopAsync();
