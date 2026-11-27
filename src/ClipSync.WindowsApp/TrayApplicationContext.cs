@@ -253,10 +253,12 @@ internal sealed class TrayApplicationContext : ApplicationContext
         if (!config.DetectOtp)
             return;
 
+        // Settings may be saved while this runs, so each step looks at the
+        // current ones; the code is only dropped if detection was turned off.
         if (config.CopyOtpAutomatically)
             _uiContext.Post(_ =>
             {
-                if (ReferenceEquals(config, _config))
+                if (_config is { DetectOtp: true, CopyOtpAutomatically: true })
                     _clipboardWatcher.SetClipboardPayloadWithoutNotifying(ClipboardPayload.ForText(code));
             }, null);
 
@@ -274,18 +276,20 @@ internal sealed class TrayApplicationContext : ApplicationContext
         {
             _uiContext.Post(_ =>
             {
-                if (!ReferenceEquals(config, _config))
+                var current = _config;
+                if (!current.DetectOtp || current.OtpNotificationMode == 0)
                     return;
 
                 _otpPopup?.Close();
-                _otpPopup = OtpPopupForm.ShowFor(code, target, config.OtpPopupSeconds);
+                _otpPopup = OtpPopupForm.ShowFor(code, target, current.OtpPopupSeconds);
             }, null);
         }
 
         // A toast rather than a balloon tip: it stays in the Windows notification
         // center, and can still be clicked there. With the popup up it goes there
         // silently, as the record of the code.
-        if (!ReferenceEquals(config, _config))
+        config = _config;
+        if (!config.DetectOtp)
             return;
 
         new ToastContentBuilder()
