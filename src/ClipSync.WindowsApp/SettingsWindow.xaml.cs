@@ -3,12 +3,15 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Threading;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Markup;
 using MessageBoxResult = System.Windows.MessageBoxResult;
 
 namespace ClipSync.WindowsApp;
+
+internal sealed record ConnectionStatus(bool ServerFailed, bool Connected, ClientContact? LastContact);
 
 public partial class SettingsWindow : FluentWindow
 {
@@ -17,16 +20,20 @@ public partial class SettingsWindow : FluentWindow
 
     private readonly Action _showPairingQrCode;
     private readonly Func<AppConfig, Task> _applySettings;
+    private readonly Func<ConnectionStatus> _getConnectionStatus;
+    private readonly DispatcherTimer _connectionTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private AppConfig _savedConfig;
     private string _sharedKey;
     private object?[] _savedValues;
     private bool _saving;
     private bool _allowClose;
 
-    internal SettingsWindow(AppConfig config, Func<AppConfig, Task> applySettings, Action showPairingQrCode)
+    internal SettingsWindow(AppConfig config, Func<AppConfig, Task> applySettings, Action showPairingQrCode,
+        Func<ConnectionStatus> getConnectionStatus)
     {
         _showPairingQrCode = showPairingQrCode;
         _applySettings = applySettings;
+        _getConnectionStatus = getConnectionStatus;
         _savedConfig = config;
         _sharedKey = config.SharedSecret;
         InitializeComponent();
@@ -43,6 +50,31 @@ public partial class SettingsWindow : FluentWindow
         AddHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnSettingsEdited));
         AddHandler(ToggleButton.CheckedEvent, new RoutedEventHandler(OnSettingsEdited));
         AddHandler(ToggleButton.UncheckedEvent, new RoutedEventHandler(OnSettingsEdited));
+
+        UpdateConnectionStatus();
+        _connectionTimer.Tick += (_, _) => UpdateConnectionStatus();
+        _connectionTimer.Start();
+        Closed += (_, _) => _connectionTimer.Stop();
+    }
+
+    private void UpdateConnectionStatus()
+    {
+        var status = _getConnectionStatus();
+        var (color, text, detail) = status switch
+        {
+            { ServerFailed: true } => (System.Windows.Media.Brushes.Firebrick, "サーバーが起動していません",
+                "「接続」でポート番号を確認してください。"),
+            { Connected: true } => (System.Windows.Media.Brushes.ForestGreen, "接続中",
+                status.LastContact is { } contact ? $"端末の IP アドレス: {contact.Address}" : ""),
+            { LastContact: { } contact } => (System.Windows.Media.Brushes.Gray, "未接続",
+                $"最後の通信: {contact.At:M/d HH:mm:ss}（{contact.Address}）"),
+            _ => (System.Windows.Media.Brushes.Gray, "未接続",
+                "iPhone でショートカットを実行すると、ここに接続状態が表示されます。")
+        };
+
+        ConnectionDot.Fill = color;
+        ConnectionStateText.Text = text;
+        ConnectionDetailText.Text = detail;
     }
 
     private void ShowValues(AppConfig config)

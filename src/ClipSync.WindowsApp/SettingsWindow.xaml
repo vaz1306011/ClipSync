@@ -146,6 +146,18 @@
                         <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
                                  BorderBrush="{DynamicResource SettingsCardBorderBrush}">
                             <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="iPhone との接続" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse x:Name="ConnectionDot" Width="10" Height="10" Margin="0,0,8,0"
+                                             VerticalAlignment="Center" />
+                                    <TextBlock x:Name="ConnectionStateText" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <TextBlock x:Name="ConnectionDetailText" Margin="0,6,0,0" Opacity="0.72" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </ui:Card>
+                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
+                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
+                            <StackPanel Margin="18">
                                 <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="動作" />
                                 <DockPanel Margin="0,5">
                                     <ui:ToggleSwitch x:Name="SyncPausedBox" DockPanel.Dock="Right"

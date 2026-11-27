@@ -58,7 +58,44 @@ internal sealed class ClipSyncServer
         var previous = _config;
         _config = config;
         if (previous.SharedSecret != config.SharedSecret)
+        {
+            _lastContact = null;
             DisconnectClients();
+        }
+    }
+
+    // The shortcut polls every second or so while it runs, so a phone that has
+    // been quiet for this long has stopped or is out of reach.
+    private static readonly TimeSpan ContactTimeout = TimeSpan.FromSeconds(10);
+
+    private volatile ClientContact? _lastContact;
+
+    /// <summary>The last authorized request from another device, if any.</summary>
+    public ClientContact? LastContact => _lastContact;
+
+    /// <summary>Whether a device is syncing now: it holds a socket open or called recently.</summary>
+    public bool IsClientConnected
+    {
+        get
+        {
+            lock (_socketsLock)
+            {
+                if (_sockets.Any(s => s.State == WebSocketState.Open))
+                    return true;
+            }
+
+            return _lastContact is { } contact && DateTimeOffset.Now - contact.At < ContactTimeout;
+        }
+    }
+
+    private void RecordContact(HttpContext context)
+    {
+        // Requests from this PC itself say nothing about the phone.
+        if (context.Connection.RemoteIpAddress is not { } address || IPAddress.IsLoopback(address))
+            return;
+
+        _lastContact = new ClientContact(
+            DateTimeOffset.Now, address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address);
     }
 
     private void DisconnectClients()
@@ -129,7 +166,11 @@ internal sealed class ClipSyncServer
                 return;
             }
 
+            RecordContact(context);
             await next();
+            // Again, so that a long transfer doesn't count as silence.
+            if (IsAuthorized(context))
+                RecordContact(context);
         });
 
         app.MapPost("/clipboard", async context =>
@@ -474,5 +515,7 @@ internal sealed class ClipSyncServer
 
     private sealed record DeviceRegistration(string DeviceToken);
 }
+
+internal sealed record ClientContact(DateTimeOffset At, IPAddress Address);
 
 internal sealed record ClipboardMetaDto(string Type, string? FileName, string? MimeType, DateTimeOffset UpdatedAt);

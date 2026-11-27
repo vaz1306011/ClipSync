@@ -93,7 +93,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         try
         {
-            _settingsWindow = new SettingsWindow(_config, ApplySettingsAsync, ShowPairingQrCode);
+            _settingsWindow = new SettingsWindow(_config, ApplySettingsAsync, ShowPairingQrCode, GetConnectionStatus);
             _settingsWindow.ShowDialog();
         }
         finally
@@ -104,6 +104,10 @@ internal sealed class TrayApplicationContext : ApplicationContext
         if (_exitRequested)
             ExitApplication();
     }
+
+    // Reads the fields on every call: applying settings may replace the server.
+    private ConnectionStatus GetConnectionStatus() =>
+        new(_serverStart.IsFaulted, _server.IsClientConnected, _server.LastContact);
 
     /// <summary>
     /// Builds the store/push/server trio for a given config. Used both at
