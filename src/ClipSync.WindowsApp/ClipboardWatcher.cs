@@ -39,11 +39,13 @@ internal sealed class ClipboardWatcher : NativeWindow, IDisposable
     private static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
 
     private bool _suppressNext;
+    private readonly Func<AppConfig> _getConfig;
 
     public event EventHandler<ClipboardPayload>? ClipboardChanged;
 
-    public ClipboardWatcher()
+    public ClipboardWatcher(Func<AppConfig> getConfig)
     {
+        _getConfig = getConfig;
         CreateHandle(new CreateParams
         {
             Caption = "ClipSyncClipboardListener",
@@ -75,9 +77,13 @@ internal sealed class ClipboardWatcher : NativeWindow, IDisposable
 
         try
         {
-            payload = ReadClipboard();
+            var config = _getConfig();
+            if (config.SyncEnabled && !config.SyncPaused)
+                payload = ReadClipboard(config);
+            else
+                return;
         }
-        catch (ExternalException)
+        catch (Exception ex) when (ex is ExternalException or IOException or UnauthorizedAccessException)
         {
             // Clipboard was locked by another process at the moment of the event; skip it.
             return;
@@ -91,7 +97,7 @@ internal sealed class ClipboardWatcher : NativeWindow, IDisposable
         ClipboardChanged?.Invoke(this, payload);
     }
 
-    private static ClipboardPayload? ReadClipboard()
+    private static ClipboardPayload? ReadClipboard(AppConfig config)
     {
         // Check file/image before text: a copied file or screenshot often also
         // carries a text representation (e.g. its path), which isn't what we want.
@@ -106,6 +112,11 @@ internal sealed class ClipboardWatcher : NativeWindow, IDisposable
 
             var fileName = Path.GetFileName(path);
             var mimeType = MimeTypesByExtension.GetValueOrDefault(Path.GetExtension(path), "application/octet-stream");
+            bool isImage = mimeType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+            if (config.IgnoreLocalFiles || !(isImage ? config.SyncImages : config.SyncFiles)
+                || (config.FileLimitMb > 0 && new FileInfo(path).Length > config.FileLimitMb * 1024L * 1024L))
+                return null;
+
             var data = File.ReadAllBytes(path);
 
             return ClipboardPayload.ForFile(fileName, mimeType, data);
@@ -113,6 +124,8 @@ internal sealed class ClipboardWatcher : NativeWindow, IDisposable
 
         if (Clipboard.ContainsImage())
         {
+            if (!config.SyncImages)
+                return null;
             using var image = Clipboard.GetImage();
 
             if (image is null)
@@ -126,7 +139,7 @@ internal sealed class ClipboardWatcher : NativeWindow, IDisposable
             return ClipboardPayload.ForFile("clipboard-image.png", "image/png", stream.ToArray());
         }
 
-        if (Clipboard.ContainsText())
+        if (config.SyncText && Clipboard.ContainsText())
         {
             var text = Clipboard.GetText();
             return string.IsNullOrEmpty(text) ? null : ClipboardPayload.ForText(text);

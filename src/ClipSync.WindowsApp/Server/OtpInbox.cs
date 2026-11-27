@@ -24,7 +24,7 @@ internal sealed class OtpInbox
 
     /// <param name="body">Messages newest first, joined by <see cref="Separator"/>.</param>
     /// <returns>The new codes, oldest first, so the newest is announced last.</returns>
-    public IReadOnlyList<string> TakeNewCodes(string body, DateTimeOffset now)
+    public IReadOnlyList<string> TakeNewCodes(string body, DateTimeOffset now, AppConfig config)
     {
         var codes = new List<string>();
 
@@ -43,7 +43,7 @@ internal sealed class OtpInbox
                 var isNew = !_seen.ContainsKey(hash);
                 _seen[hash] = now;
 
-                if (isNew && OtpExtractor.Extract(message) is { } code)
+                if (isNew && OtpExtractor.Extract(message, config) is { } code)
                 {
                     codes.Add(code);
                 }
