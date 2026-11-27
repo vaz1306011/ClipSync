@@ -48,7 +48,10 @@ internal sealed class ClipSyncServer
     };
 
     private volatile AppConfig _config;
-    private static readonly ClipboardPayload HiddenClipboard = ClipboardPayload.ForText("") with { UpdatedAt = DateTimeOffset.MinValue };
+
+    // The updatedAt last reported by /clipboard/meta.
+    private DateTimeOffset _reportedUpdatedAt = DateTimeOffset.MinValue;
+    private readonly object _reportedLock = new();
 
     public void UpdateConfig(AppConfig config)
     {
@@ -70,8 +73,25 @@ internal sealed class ClipSyncServer
     private ClipboardPayload VisibleClipboard()
     {
         var payload = _store.GetLatest();
-        return _config.AllowsClipboard(payload) ? payload : HiddenClipboard;
+        return _config.AllowsClipboard(payload) ? payload : ClipboardStore.Empty;
     }
+
+    // Clients download whenever updatedAt changes, so with nothing to hand out
+    // (paused, disallowed, or cleared) it stays as last reported. Otherwise
+    // they would overwrite their clipboard with an empty text.
+    private ClipboardMetaDto VisibleMeta()
+    {
+        lock (_reportedLock)
+        {
+            var payload = VisibleClipboard();
+            if (ReferenceEquals(payload, ClipboardStore.Empty))
+                return ToMetaDto(payload) with { UpdatedAt = _reportedUpdatedAt };
+
+            _reportedUpdatedAt = payload.UpdatedAt;
+            return ToMetaDto(payload);
+        }
+    }
+
     private readonly ClipboardStore _store;
     private readonly DeviceStore _devices;
     private readonly List<WebSocket> _sockets = new();
@@ -122,7 +142,11 @@ internal sealed class ClipSyncServer
             }
 
             var contentType = context.Request.Headers[ContentTypeHeader].ToString();
+            // HTML and RTF items may turn into text, which the limit doesn't
+            // cover; those are checked after conversion.
+            var extension = context.Request.Headers[ExtensionHeader].ToString().TrimStart('.');
             if (contentType == "file" && config.FileLimitMb > 0
+                && !IsHtmlExtension(extension) && !RtfConverter.IsRtfExtension(extension)
                 && context.Request.ContentLength > config.FileLimitMb * 1024L * 1024L)
             {
                 context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
@@ -140,8 +164,6 @@ internal sealed class ClipSyncServer
             }
 
             ClipboardPayload payload;
-
-            var extension = context.Request.Headers[ExtensionHeader].ToString().TrimStart('.');
 
             // iOS reports a copied web address as an .html item, so the shortcut
             // uploads it as a file — either the bare URL or the fetched page.
@@ -252,8 +274,7 @@ internal sealed class ClipSyncServer
 
         app.MapGet("/clipboard/meta", async context =>
         {
-            var payload = VisibleClipboard();
-            await context.Response.WriteAsJsonAsync(ToMetaDto(payload));
+            await context.Response.WriteAsJsonAsync(VisibleMeta());
         });
 
         app.MapGet("/clipboard/data", async context =>

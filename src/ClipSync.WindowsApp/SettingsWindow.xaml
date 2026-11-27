@@ -221,6 +221,8 @@
                                 <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="詳細" />
                                 <TextBlock Margin="0,3,0,5" Text="追加の正規表現" />
                                 <TextBox x:Name="PatternBox" MaxLength="1000" />
+                                <TextBlock Margin="0,4,0,0" Opacity="0.72" TextWrapping="Wrap"
+                                           Text="取り出す部分は (?&lt;code&gt;…) で指定できます。" />
                                 <TextBlock Margin="0,10,0,4" Text="テスト用のメッセージ" />
                                 <TextBox x:Name="PatternSampleBox" MaxLength="4000" Text="確認コードは 123456 です。" />
                                 <CheckBox Margin="0,10,0,4" x:Name="NormalizeOtpBox" Content="検出前に文字を NFKC 正規化する" IsChecked="True" />

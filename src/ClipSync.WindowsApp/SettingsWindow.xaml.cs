@@ -73,10 +73,10 @@ public partial class SettingsWindow : FluentWindow
 
     private void OnSettingsEdited(object sender, RoutedEventArgs e) => UpdateApplyVisibility();
 
+    private bool HasChanges => !CaptureSettingsValues().SequenceEqual(_savedValues);
+
     private void UpdateApplyVisibility() =>
-        ApplyButton.Visibility = CaptureSettingsValues().SequenceEqual(_savedValues)
-            ? Visibility.Collapsed
-            : Visibility.Visible;
+        ApplyButton.Visibility = HasChanges ? Visibility.Visible : Visibility.Collapsed;
 
     private static ApplicationTheme ReadTheme()
     {
@@ -167,9 +167,18 @@ public partial class SettingsWindow : FluentWindow
             var config = _savedConfig.Copy();
             config.NormalizeOtp = NormalizeOtpBox.IsChecked == true;
             config.ExcludeOtpUrls = ExcludeOtpUrlsBox.IsChecked == true;
-            var match = OtpExtractor.CreateCustomPattern(PatternBox.Text)
-                .Match(OtpExtractor.Prepare(PatternSampleBox.Text, config));
-            ShowNotice(match.Success ? $"一致: {match.Value}" : "一致する部分がありません。");
+            var text = OtpExtractor.Prepare(PatternSampleBox.Text, config);
+            var match = OtpExtractor.CreateCustomPattern(PatternBox.Text.Trim()).Match(text);
+            if (!match.Success)
+            {
+                ShowNotice("一致する部分がありません。");
+                return;
+            }
+
+            var code = OtpExtractor.ExtractCustom(match, text);
+            ShowNotice($"一致: {match.Value}\n" + (code is null
+                ? "このパターンからは認証コードを取り出せないため、標準の検出が使われます。"
+                : $"認証コード: {code}"));
         }
         catch (Exception ex) when (ex is ArgumentException or RegexMatchTimeoutException)
         {
@@ -179,7 +188,9 @@ public partial class SettingsWindow : FluentWindow
 
     private AppConfig ReadSettings()
     {
-        var next = _savedConfig.Copy();
+        // Start from the file, so hand-edited settings this window doesn't show
+        // (APNs, relay) survive even if they haven't been reloaded.
+        var next = AppConfig.LoadOrCreate();
         next.StartOnSignIn = StartOnSignInBox.IsChecked == true;
         next.SyncPaused = SyncPausedBox.IsChecked == true;
         next.SyncEnabled = true;
@@ -215,6 +226,8 @@ public partial class SettingsWindow : FluentWindow
     {
         if (_saving)
             return false;
+        if (!HasChanges)
+            return true;
 
         _saving = true;
         try
@@ -245,15 +258,18 @@ public partial class SettingsWindow : FluentWindow
     {
         if (await SaveAsync())
         {
-            _allowClose = true;
-            DialogResult = true;
+            CloseWithoutSaving();
         }
     }
 
-    private void Cancel_Click(object sender, RoutedEventArgs e)
+    private void Cancel_Click(object sender, RoutedEventArgs e) => CloseWithoutSaving();
+
+    // Close, unlike DialogResult, is safe if the window is already gone, which
+    // happens when the app exits while a save is in progress.
+    internal void CloseWithoutSaving()
     {
         _allowClose = true;
-        DialogResult = false;
+        Close();
     }
 
     protected override async void OnClosing(CancelEventArgs e)
@@ -262,8 +278,22 @@ public partial class SettingsWindow : FluentWindow
         if (e.Cancel || _allowClose)
             return;
 
-        e.Cancel = true;
         if (_saving)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        if (!HasChanges)
+            return;
+
+        var answer = System.Windows.MessageBox.Show(this, "変更を保存しますか？", Title,
+            System.Windows.MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Cancel);
+        if (answer == MessageBoxResult.No)
+            return;
+
+        e.Cancel = true;
+        if (answer != MessageBoxResult.Yes)
             return;
 
         await Task.Yield();

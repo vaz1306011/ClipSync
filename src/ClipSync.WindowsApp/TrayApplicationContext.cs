@@ -19,7 +19,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private volatile AppConfig _config;
     private readonly SemaphoreSlim _settingsLock = new(1);
     private Task _serverStart;
-    private bool _settingsOpen;
+    private SettingsWindow? _settingsWindow;
+    private bool _exitRequested;
     private ClipboardStore _store;
     private PushNotificationService _pushService;
     private ClipSyncServer _server;
@@ -54,6 +55,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         ToastNotificationManagerCompat.OnActivated += OnToastActivated;
 
         _portMenuItem = new ToolStripMenuItem(GetDisplayAddressLabel()) { Enabled = false };
+        _ = ReportStartFailureAsync(_serverStart, _config.Port);
 
         var menu = new ContextMenuStrip();
         menu.Items.Add(_portMenuItem);
@@ -70,19 +72,21 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private void ShowSettings()
     {
-        if (_settingsOpen)
+        if (_settingsWindow is not null)
             return;
 
-        _settingsOpen = true;
         try
         {
-            var window = new SettingsWindow(_config, ApplySettingsAsync, ShowPairingQrCode);
-            window.ShowDialog();
+            _settingsWindow = new SettingsWindow(_config, ApplySettingsAsync, ShowPairingQrCode);
+            _settingsWindow.ShowDialog();
         }
         finally
         {
-            _settingsOpen = false;
+            _settingsWindow = null;
         }
+
+        if (_exitRequested)
+            ExitApplication();
     }
 
     /// <summary>
@@ -109,7 +113,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private async Task ReloadConfigAsync()
     {
-        if (_settingsOpen)
+        if (_settingsWindow is not null)
             return;
 
         try
@@ -133,7 +137,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
             try { await _serverStart; }
             catch when (_serverStart.IsFaulted) { }
 
-            if (next.Port != _config.Port || _serverStart.IsFaulted)
+            if (next.Port != _config.Port)
             {
                 var replacement = CreateServerPipeline(next);
                 await replacement.Server.StartAsync();
@@ -158,11 +162,19 @@ internal sealed class TrayApplicationContext : ApplicationContext
             {
                 if (save)
                     SaveSettings(next);
-                if (!save)
-                    _pushService.UpdateSender(CreatePushSender(next));
+                _pushService.UpdateSender(CreatePushSender(next));
                 _server.UpdateConfig(next);
                 _store.ClearIfDisallowed(next);
                 _config = next;
+
+                // Retry a server that never started, without holding the other
+                // settings back if the port is still taken.
+                if (_serverStart.IsFaulted)
+                {
+                    (_store, _pushService, _server) = CreateServerPipeline(next);
+                    _serverStart = _server.StartAsync();
+                    _ = ReportStartFailureAsync(_serverStart, next.Port);
+                }
             }
 
             _trayIcon.Text = $"ClipSync (port {_config.Port})";
@@ -171,6 +183,19 @@ internal sealed class TrayApplicationContext : ApplicationContext
         finally
         {
             _settingsLock.Release();
+        }
+    }
+
+    private async Task ReportStartFailureAsync(Task start, int port)
+    {
+        try
+        {
+            await start;
+        }
+        catch (Exception ex)
+        {
+            _uiContext.Post(_ => _trayIcon.ShowBalloonTip(10000, "ClipSync",
+                $"ポート {port} でサーバーを起動できませんでした。\n{ex.Message}", ToolTipIcon.Error), null);
         }
     }
 
@@ -251,10 +276,12 @@ internal sealed class TrayApplicationContext : ApplicationContext
         if (!config.DetectOtp)
             return;
 
+        // Settings may be saved while this runs, so each step looks at the
+        // current ones; the code is only dropped if detection was turned off.
         if (config.CopyOtpAutomatically)
             _uiContext.Post(_ =>
             {
-                if (ReferenceEquals(config, _config))
+                if (_config is { DetectOtp: true, CopyOtpAutomatically: true })
                     _clipboardWatcher.SetClipboardPayloadWithoutNotifying(ClipboardPayload.ForText(code));
             }, null);
 
@@ -272,18 +299,20 @@ internal sealed class TrayApplicationContext : ApplicationContext
         {
             _uiContext.Post(_ =>
             {
-                if (!ReferenceEquals(config, _config))
+                var current = _config;
+                if (!current.DetectOtp || current.OtpNotificationMode == 0)
                     return;
 
                 _otpPopup?.Close();
-                _otpPopup = OtpPopupForm.ShowFor(code, target, config.OtpPopupSeconds);
+                _otpPopup = OtpPopupForm.ShowFor(code, target, current.OtpPopupSeconds);
             }, null);
         }
 
         // A toast rather than a balloon tip: it stays in the Windows notification
         // center, and can still be clicked there. With the popup up it goes there
         // silently, as the record of the code.
-        if (!ReferenceEquals(config, _config))
+        config = _config;
+        if (!config.DetectOtp)
             return;
 
         new ToastContentBuilder()
@@ -327,6 +356,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private void ExitApplication()
     {
+        // The settings window runs its own modal loop: close it first, and
+        // ShowSettings comes back here once that loop has ended.
+        if (_settingsWindow is not null)
+        {
+            _exitRequested = true;
+            _settingsWindow.CloseWithoutSaving();
+            return;
+        }
+
         _trayIcon.Visible = false;
         _clipboardWatcher.Dispose();
         _ = _server.StopAsync();

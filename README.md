@@ -34,6 +34,7 @@ Safari でリンクを開き、「ショートカットを追加」をタップ�
 
 ### トレイメニュー
 
+- 「設定」：同期する内容、認証コードの検出と通知、ポート番号と共有キーなどを変更
 - 「ペアリング QR コードを表示」：Shortcuts などでスキャンしてペアリング
 - 「設定を再読み込み」：設定ファイルを変更した後に反映
 
@@ -97,6 +98,7 @@ dotnet run --project src/ClipSync.WindowsApp
 | 同期中の内容の保持                         | `Server/ClipboardStore.cs`、`Server/ClipboardPayload.cs`                      |
 | HEIC → PNG 変換                            | `Server/HeicConverter.cs`                                                     |
 | 設定ファイル（`config.json`）              | `Server/AppConfig.cs`                                                         |
+| 設定画面                                   | `SettingsWindow.xaml`、`SettingsWindow.xaml.cs`                               |
 | ペアリング QR コード                       | `PairingQrCode.cs`（内容と画像）、`QrCodeForm.cs`（画面）                     |
 | QR コードに入れる IP アドレスの選択        | `LocalNetworkInfo.cs`                                                         |
 | 認証コードの抽出                           | `Server/OtpExtractor.cs`                                                      |
@@ -116,10 +118,10 @@ dotnet run --project src/ClipSync.WindowsApp
 | 対応する拡張子と MIME タイプ         | `MimeTypesByExtension`。`Server/ClipSyncServer.cs`（受信、`.` なし）と `ClipboardWatcher.cs`（送信、`.` あり）の両方にある   |
 | API の追加                           | `Server/ClipSyncServer.cs` の `StartAsync`（キー認証はすべてのパスに適用される）                                             |
 | トレイメニューの項目                 | `TrayApplicationContext.cs` のコンストラクター                                                                               |
-| 認証コードとみなす条件               | `Server/OtpExtractor.cs` の `KeywordRegex`（キーワード）、`CodeRegex`（桁数など）                                            |
+| 認証コードとみなす条件               | キーワードと追加の正規表現は設定画面。桁数などは `Server/OtpExtractor.cs` の `CodeRegex`                                            |
 | `/otp` の上限サイズ                  | `Server/ClipSyncServer.cs` の `MaxOtpBodyBytes`                                                                              |
 | 同じメッセージを無視する時間         | `Server/OtpInbox.cs` の `Memory`                                                                                             |
-| 浮動ボタンの表示時間・大きさ・見た目 | `OtpPopupForm.cs` の `LifetimeMilliseconds`、`BaseWidth` / `BaseHeight`、コンストラクター（色）、`OnPaint`（文字・アイコン） |
+| 浮動ボタンの表示時間・大きさ・見た目 | 表示時間は設定画面。他は `OtpPopupForm.cs` の `BaseWidth` / `BaseHeight`、コンストラクター（色）、`OnPaint`（文字・アイコン） |
 
 ペアリング情報は iPhone 側の `ClipSync/clipsync-config.json` に保存されます。再ペアリングするには、このファイルを削除してからショートカットを実行してください。
 
