@@ -10,6 +10,8 @@ internal sealed class AppConfig
 
     public bool? DarkTheme { get; set; }
     public bool StartOnSignIn { get; set; }
+    // 0: settings window, 1: pairing QR code.
+    public int TrayDoubleClickAction { get; set; }
     public bool SyncPaused { get; set; }
     public bool SyncEnabled { get; set; } = true;
     public bool SyncText { get; set; } = true;

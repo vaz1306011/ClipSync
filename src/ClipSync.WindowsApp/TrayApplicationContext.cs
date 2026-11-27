@@ -20,6 +20,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private readonly SemaphoreSlim _settingsLock = new(1);
     private Task _serverStart;
     private SettingsWindow? _settingsWindow;
+    private QrCodeForm? _qrCodeForm;
     private bool _exitRequested;
     private ClipboardStore _store;
     private PushNotificationService _pushService;
@@ -68,12 +69,27 @@ internal sealed class TrayApplicationContext : ApplicationContext
         menu.Items.Add(new ToolStripMenuItem("終了", null, (_, _) => ExitApplication()));
 
         _trayIcon.ContextMenuStrip = menu;
+        _trayIcon.MouseDoubleClick += OnTrayDoubleClick;
+    }
+
+    private void OnTrayDoubleClick(object? sender, MouseEventArgs e)
+    {
+        if (e.Button != MouseButtons.Left)
+            return;
+
+        if (_config.TrayDoubleClickAction == 1)
+            ShowPairingQrCode();
+        else
+            ShowSettings();
     }
 
     private void ShowSettings()
     {
         if (_settingsWindow is not null)
+        {
+            _settingsWindow.Activate();
             return;
+        }
 
         try
         {
@@ -337,6 +353,12 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private void ShowPairingQrCode()
     {
+        if (_qrCodeForm is not null)
+        {
+            _qrCodeForm.Activate();
+            return;
+        }
+
         var host = LocalNetworkInfo.GetLocalIPv4();
 
         if (host is null)
@@ -351,7 +373,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
         using var qrImage = PairingQrCode.GenerateImage(payload);
 
         using var form = new QrCodeForm(qrImage, payload);
-        form.ShowDialog();
+        try
+        {
+            _qrCodeForm = form;
+            form.ShowDialog();
+        }
+        finally
+        {
+            _qrCodeForm = null;
+        }
     }
 
     private void ExitApplication()

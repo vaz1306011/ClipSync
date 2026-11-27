@@ -177,6 +177,18 @@
                         <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
                                  BorderBrush="{DynamicResource SettingsCardBorderBrush}">
                             <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="トレイアイコン" />
+                                <TextBlock Margin="0,3,0,6" Text="ダブルクリック時の動作" />
+                                <ComboBox x:Name="DoubleClickActionPicker" Width="300" HorizontalAlignment="Left" SelectedIndex="0"
+                                          AutomationProperties.Name="ダブルクリック時の動作">
+                                    <ComboBoxItem Content="設定を開く" />
+                                    <ComboBoxItem Content="ペアリング QR コードを表示" />
+                                </ComboBox>
+                            </StackPanel>
+                        </ui:Card>
+                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
+                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
+                            <StackPanel Margin="18">
                                 <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="リセット" />
                                 <TextBlock Margin="0,0,0,10" Opacity="0.72" TextWrapping="Wrap"
                                            Text="すべての設定を初期値に戻します。共有キーは変わりません。「適用」または「OK」を押すまで保存されません。" />

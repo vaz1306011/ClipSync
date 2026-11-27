@@ -48,6 +48,7 @@ public partial class SettingsWindow : FluentWindow
     private void ShowValues(AppConfig config)
     {
         StartOnSignInBox.IsChecked = config.StartOnSignIn;
+        DoubleClickActionPicker.SelectedIndex = Math.Clamp(config.TrayDoubleClickAction, 0, 1);
         SyncPausedBox.IsChecked = config.SyncPaused || !config.SyncEnabled;
         SyncTextBox.IsChecked = config.SyncText;
         SyncImagesBox.IsChecked = config.SyncImages;
@@ -72,7 +73,7 @@ public partial class SettingsWindow : FluentWindow
         FileLimitBox.Text.Trim(), IgnoreLocalFilesBox.IsChecked, NotificationModePicker.SelectedIndex,
         CopyOtpAutomaticallyBox.IsChecked, PopupSecondsBox.Text.Trim(), DetectOtpBox.IsChecked,
         KeywordsBox.Text, PatternBox.Text.Trim(), NormalizeOtpBox.IsChecked, ExcludeOtpUrlsBox.IsChecked,
-        PortBox.Text.Trim(), _sharedKey
+        PortBox.Text.Trim(), _sharedKey, DoubleClickActionPicker.SelectedIndex
     ];
 
     private void OnSettingsEdited(object sender, RoutedEventArgs e) => UpdateApplyButton();
@@ -207,6 +208,7 @@ public partial class SettingsWindow : FluentWindow
         // (APNs, relay) survive even if they haven't been reloaded.
         var next = AppConfig.LoadOrCreate();
         next.StartOnSignIn = StartOnSignInBox.IsChecked == true;
+        next.TrayDoubleClickAction = DoubleClickActionPicker.SelectedIndex;
         next.SyncPaused = SyncPausedBox.IsChecked == true;
         next.SyncEnabled = true;
         next.SyncText = SyncTextBox.IsChecked == true;
