@@ -118,7 +118,7 @@ dotnet run --project src/ClipSync.WindowsApp
 | 対応する拡張子と MIME タイプ         | `MimeTypesByExtension`。`Server/ClipSyncServer.cs`（受信、`.` なし）と `ClipboardWatcher.cs`（送信、`.` あり）の両方にある   |
 | API の追加                           | `Server/ClipSyncServer.cs` の `StartAsync`（キー認証はすべてのパスに適用される）                                             |
 | トレイメニューの項目                 | `TrayApplicationContext.cs` のコンストラクター                                                                               |
-| 認証コードとみなす条件               | キーワードと追加の正規表現は設定画面。桁数などは `Server/OtpExtractor.cs` の `CodeRegex`                                            |
+| 認証コードとみなす条件               | キーワードと追加の正規表現（1 行に 1 ルール、上から順）は設定画面。桁数などは `Server/OtpExtractor.cs` の `CodeRegex`              |
 | `/otp` の上限サイズ                  | `Server/ClipSyncServer.cs` の `MaxOtpBodyBytes`                                                                              |
 | 同じメッセージを無視する時間         | `Server/OtpInbox.cs` の `Memory`                                                                                             |
 | 浮動ボタンの表示時間・大きさ・見た目 | 表示時間は設定画面。他は `OtpPopupForm.cs` の `BaseWidth` / `BaseHeight`、コンストラクター（色）、`OnPaint`（文字・アイコン） |
