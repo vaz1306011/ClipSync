@@ -133,7 +133,7 @@
             <TabItem Header="一般">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="0,0,14,0">
-                        <TextBlock Style="{StaticResource GroupHeader}" Text="iPhone との接続" />
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="同期" />
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
                                 <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
@@ -149,12 +149,7 @@
                                         </StackPanel>
                                     </DockPanel>
                                 </Border>
-                            </StackPanel>
-                        </Border>
-                        <TextBlock Style="{StaticResource GroupHeader}" Text="動作" />
-                        <Border Style="{StaticResource SettingsGroup}">
-                            <StackPanel>
-                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                <Border Style="{StaticResource SettingsRow}">
                                     <DockPanel>
                                         <ui:ToggleSwitch x:Name="SyncPausedBox" DockPanel.Dock="Right" VerticalAlignment="Center"
                                                          AutomationProperties.Name="クリップボード同期を一時停止する" />
@@ -163,7 +158,7 @@
                                 </Border>
                             </StackPanel>
                         </Border>
-                        <TextBlock Style="{StaticResource GroupHeader}" Text="外観" />
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="アプリ" />
                         <Border Style="{StaticResource SettingsGroup}">
                             <StackPanel>
                                 <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
@@ -176,39 +171,24 @@
                                         <TextBlock Style="{StaticResource RowLabel}" Text="配色テーマ" />
                                     </DockPanel>
                                 </Border>
-                            </StackPanel>
-                        </Border>
-                        <TextBlock Style="{StaticResource GroupHeader}" Text="起動" />
-                        <Border Style="{StaticResource SettingsGroup}">
-                            <StackPanel>
-                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                <Border Style="{StaticResource SettingsRow}">
                                     <DockPanel>
                                         <ui:ToggleSwitch x:Name="StartOnSignInBox" DockPanel.Dock="Right" VerticalAlignment="Center"
                                                          AutomationProperties.Name="Windows へのサインイン時に ClipSync を起動する" />
                                         <TextBlock Style="{StaticResource RowLabel}" Text="Windows へのサインイン時に ClipSync を起動する" />
                                     </DockPanel>
                                 </Border>
-                            </StackPanel>
-                        </Border>
-                        <TextBlock Style="{StaticResource GroupHeader}" Text="トレイアイコン" />
-                        <Border Style="{StaticResource SettingsGroup}">
-                            <StackPanel>
-                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                <Border Style="{StaticResource SettingsRow}">
                                     <DockPanel>
                                         <ComboBox x:Name="DoubleClickActionPicker" DockPanel.Dock="Right" VerticalAlignment="Center" Width="260" SelectedIndex="0"
-                                                  AutomationProperties.Name="ダブルクリック時の動作">
+                                                  AutomationProperties.Name="トレイアイコンのダブルクリック時の動作">
                                             <ComboBoxItem Content="設定を開く" />
                                             <ComboBoxItem Content="ペアリング QR コードを表示" />
                                         </ComboBox>
-                                        <TextBlock Style="{StaticResource RowLabel}" Text="ダブルクリック時の動作" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="トレイアイコンのダブルクリック時の動作" />
                                     </DockPanel>
                                 </Border>
-                            </StackPanel>
-                        </Border>
-                        <TextBlock Style="{StaticResource GroupHeader}" Text="リセット" />
-                        <Border Style="{StaticResource SettingsGroup}">
-                            <StackPanel>
-                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                <Border Style="{StaticResource SettingsRow}">
                                     <DockPanel>
                                         <Button DockPanel.Dock="Right" VerticalAlignment="Center" Content="すべての設定をリセット" Click="ResetSettings_Click" />
                                         <StackPanel Style="{StaticResource RowText}">
