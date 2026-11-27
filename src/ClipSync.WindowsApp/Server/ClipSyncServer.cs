@@ -142,7 +142,11 @@ internal sealed class ClipSyncServer
             }
 
             var contentType = context.Request.Headers[ContentTypeHeader].ToString();
+            // HTML and RTF items may turn into text, which the limit doesn't
+            // cover; those are checked after conversion.
+            var extension = context.Request.Headers[ExtensionHeader].ToString().TrimStart('.');
             if (contentType == "file" && config.FileLimitMb > 0
+                && !IsHtmlExtension(extension) && !RtfConverter.IsRtfExtension(extension)
                 && context.Request.ContentLength > config.FileLimitMb * 1024L * 1024L)
             {
                 context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
@@ -160,8 +164,6 @@ internal sealed class ClipSyncServer
             }
 
             ClipboardPayload payload;
-
-            var extension = context.Request.Headers[ExtensionHeader].ToString().TrimStart('.');
 
             // iOS reports a copied web address as an .html item, so the shortcut
             // uploads it as a file — either the bare URL or the fetched page.
