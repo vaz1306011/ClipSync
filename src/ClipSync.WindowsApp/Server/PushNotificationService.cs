@@ -8,7 +8,9 @@ namespace ClipSync.WindowsApp.Server;
 internal sealed class PushNotificationService
 {
     private readonly DeviceStore _devices;
-    private readonly IPushSender _sender;
+    private volatile IPushSender _sender;
+
+    public void UpdateSender(IPushSender sender) => _sender = sender;
 
     public PushNotificationService(DeviceStore devices, IPushSender sender)
     {
@@ -18,7 +20,8 @@ internal sealed class PushNotificationService
 
     public async Task NotifyAllAsync()
     {
-        if (!_sender.IsConfigured)
+        var sender = _sender;
+        if (!sender.IsConfigured)
         {
             return;
         }
@@ -27,7 +30,7 @@ internal sealed class PushNotificationService
         {
             try
             {
-                await _sender.SendSilentPushAsync(token);
+                await sender.SendSilentPushAsync(token);
             }
             catch (HttpRequestException)
             {

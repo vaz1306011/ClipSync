@@ -47,7 +47,31 @@ internal sealed class ClipSyncServer
         ["xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     };
 
-    private readonly AppConfig _config;
+    private volatile AppConfig _config;
+    private static readonly ClipboardPayload HiddenClipboard = ClipboardPayload.ForText("") with { UpdatedAt = DateTimeOffset.MinValue };
+
+    public void UpdateConfig(AppConfig config)
+    {
+        var previous = _config;
+        _config = config;
+        if (previous.SharedSecret != config.SharedSecret)
+            DisconnectClients();
+    }
+
+    private void DisconnectClients()
+    {
+        lock (_socketsLock)
+        {
+            foreach (var socket in _sockets)
+                socket.Abort();
+        }
+    }
+
+    private ClipboardPayload VisibleClipboard()
+    {
+        var payload = _store.GetLatest();
+        return _config.AllowsClipboard(payload) ? payload : HiddenClipboard;
+    }
     private readonly ClipboardStore _store;
     private readonly DeviceStore _devices;
     private readonly List<WebSocket> _sockets = new();
@@ -90,7 +114,20 @@ internal sealed class ClipSyncServer
 
         app.MapPost("/clipboard", async context =>
         {
+            var config = _config;
+            if (!config.SyncEnabled || config.SyncPaused)
+            {
+                context.Response.StatusCode = StatusCodes.Status204NoContent;
+                return;
+            }
+
             var contentType = context.Request.Headers[ContentTypeHeader].ToString();
+            if (contentType == "file" && config.FileLimitMb > 0
+                && context.Request.ContentLength > config.FileLimitMb * 1024L * 1024L)
+            {
+                context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+                return;
+            }
 
             using var bodyStream = new MemoryStream();
             await context.Request.Body.CopyToAsync(bodyStream);
@@ -155,6 +192,18 @@ internal sealed class ClipSyncServer
                 payload = ClipboardPayload.ForText(Encoding.UTF8.GetString(bytes));
             }
 
+            if (!IsAuthorized(context))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+
+            if (!_config.AllowsClipboard(payload))
+            {
+                context.Response.StatusCode = StatusCodes.Status204NoContent;
+                return;
+            }
+
             _store.Set(payload);
             RemoteClipboardReceived?.Invoke(this, payload);
             await BroadcastMetaAsync(payload);
@@ -167,6 +216,13 @@ internal sealed class ClipSyncServer
         // clipboard.
         app.MapPost("/otp", async context =>
         {
+            var config = _config;
+            if (!config.DetectOtp)
+            {
+                context.Response.StatusCode = StatusCodes.Status204NoContent;
+                return;
+            }
+
             using var bodyStream = new MemoryStream();
             await context.Request.Body.CopyToAsync(bodyStream);
 
@@ -178,9 +234,15 @@ internal sealed class ClipSyncServer
                 return;
             }
 
+            if (!IsAuthorized(context))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+
             var body = Encoding.UTF8.GetString(bodyStream.ToArray());
 
-            foreach (var code in _otpInbox.TakeNewCodes(body, DateTimeOffset.UtcNow))
+            foreach (var code in _otpInbox.TakeNewCodes(body, DateTimeOffset.UtcNow, config))
             {
                 OtpReceived?.Invoke(this, code);
             }
@@ -190,13 +252,13 @@ internal sealed class ClipSyncServer
 
         app.MapGet("/clipboard/meta", async context =>
         {
-            var payload = _store.GetLatest();
+            var payload = VisibleClipboard();
             await context.Response.WriteAsJsonAsync(ToMetaDto(payload));
         });
 
         app.MapGet("/clipboard/data", async context =>
         {
-            var payload = _store.GetLatest();
+            var payload = VisibleClipboard();
 
             if (payload.Type == ClipboardContentType.Text)
             {
@@ -241,6 +303,11 @@ internal sealed class ClipSyncServer
 
             lock (_socketsLock)
             {
+                if (!IsAuthorized(context))
+                {
+                    socket.Abort();
+                    return;
+                }
                 _sockets.Add(socket);
             }
 
@@ -248,7 +315,16 @@ internal sealed class ClipSyncServer
         });
 
         _app = app;
-        await app.StartAsync();
+        try
+        {
+            await app.StartAsync();
+        }
+        catch
+        {
+            _app = null;
+            await app.DisposeAsync();
+            throw;
+        }
     }
 
     private static bool IsHtmlExtension(string extension) =>
@@ -340,6 +416,9 @@ internal sealed class ClipSyncServer
 
     public async Task BroadcastMetaAsync(ClipboardPayload payload)
     {
+        if (!_config.AllowsClipboard(payload))
+            return;
+
         var bytes = JsonSerializer.SerializeToUtf8Bytes(ToMetaDto(payload));
         List<WebSocket> targets;
 
@@ -365,7 +444,10 @@ internal sealed class ClipSyncServer
     {
         if (_app is not null)
         {
+            DisconnectClients();
             await _app.StopAsync();
+            await _app.DisposeAsync();
+            _app = null;
         }
     }
 

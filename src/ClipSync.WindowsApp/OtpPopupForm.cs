@@ -17,7 +17,6 @@ internal sealed class OtpPopupForm : Form
     private const int MaNoActivate = 3;
     private const uint SwpNoActivate = 0x0010;
     private const uint MonitorDefaultToNearest = 2;
-    private const int LifetimeMilliseconds = 60_000;
 
     // Layout in 96 DPI pixels.
     private const int BaseWidth = 220;
@@ -47,11 +46,12 @@ internal sealed class OtpPopupForm : Form
     private readonly string _code;
     private readonly TextInputTarget _target;
     private readonly System.Windows.Forms.Timer _timer = new() { Interval = 250 };
-    private readonly long _expiresAt = Environment.TickCount64 + LifetimeMilliseconds;
+    private readonly long _expiresAt;
     private float _scale = 1;
 
-    private OtpPopupForm(string code, TextInputTarget target)
+    private OtpPopupForm(string code, TextInputTarget target, int seconds)
     {
+        _expiresAt = Environment.TickCount64 + Math.Clamp(seconds, 1, 3600) * 1000L;
         _code = code;
         _target = target;
 
@@ -66,11 +66,11 @@ internal sealed class OtpPopupForm : Form
         _timer.Tick += (_, _) => FollowTargetWindow();
     }
 
-    public static OtpPopupForm ShowFor(string code, TextInputTarget target)
+    public static OtpPopupForm ShowFor(string code, TextInputTarget target, int seconds)
     {
         using var _ = NativeMethods.UsePhysicalPixels();
 
-        var form = new OtpPopupForm(code, target);
+        var form = new OtpPopupForm(code, target, seconds);
         form.PlaceAndShow();
         return form;
     }

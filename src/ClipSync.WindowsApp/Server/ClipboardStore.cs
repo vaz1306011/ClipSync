@@ -3,7 +3,8 @@ namespace ClipSync.WindowsApp.Server;
 internal sealed class ClipboardStore
 {
     private readonly object _lock = new();
-    private ClipboardPayload _latest = ClipboardPayload.ForText(string.Empty);
+    private static readonly ClipboardPayload Empty = ClipboardPayload.ForText(string.Empty) with { UpdatedAt = DateTimeOffset.MinValue };
+    private ClipboardPayload _latest = Empty;
 
     /// <summary>Fired after every Set, regardless of whether the change came from
     /// the local clipboard watcher or a remote client — the single point where
@@ -18,6 +19,15 @@ internal sealed class ClipboardStore
         }
 
         Updated?.Invoke(this, payload);
+    }
+
+    public void ClearIfDisallowed(AppConfig config)
+    {
+        lock (_lock)
+        {
+            if (!config.AllowsClipboard(_latest))
+                _latest = Empty;
+        }
     }
 
     public ClipboardPayload GetLatest()
