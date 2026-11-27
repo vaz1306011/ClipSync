@@ -266,8 +266,22 @@ public partial class SettingsWindow : FluentWindow
         if (e.Cancel || _allowClose)
             return;
 
-        e.Cancel = true;
         if (_saving)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        if (!HasChanges)
+            return;
+
+        var answer = System.Windows.MessageBox.Show(this, "変更を保存しますか？", Title,
+            System.Windows.MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Cancel);
+        if (answer == MessageBoxResult.No)
+            return;
+
+        e.Cancel = true;
+        if (answer != MessageBoxResult.Yes)
             return;
 
         await Task.Yield();
