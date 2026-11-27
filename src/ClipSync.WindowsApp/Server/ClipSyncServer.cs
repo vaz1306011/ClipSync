@@ -66,7 +66,7 @@ internal sealed class ClipSyncServer
 
     // The shortcut polls every second or so while it runs, so a phone that has
     // been quiet for this long has stopped or is out of reach.
-    private static readonly TimeSpan ContactTimeout = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan ContactTimeout = TimeSpan.FromSeconds(5);
 
     private volatile ClientContact? _lastContact;
 
