@@ -19,6 +19,14 @@
                 <ui:ThemesDictionary Theme="Light" />
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
+            <!--
+                WPF-UI only defines these through its accent manager, which needs a WPF
+                Application that this WinForms app does not have. Without them a switch
+                that is on turns transparent under the mouse. The values are the default
+                accent at 90% and 80% opacity, as in Fluent's hover and pressed states.
+            -->
+            <Color x:Key="AccentFillColorSecondary">#E60067C0</Color>
+            <Color x:Key="AccentFillColorTertiary">#CC0067C0</Color>
             <Style x:Key="GroupHeader" TargetType="{x:Type TextBlock}">
                 <Setter Property="Margin" Value="2,0,0,8" />
                 <Setter Property="FontSize" Value="16" />
