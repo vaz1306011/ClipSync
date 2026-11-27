@@ -241,18 +241,15 @@
                                 </Border>
                                 <Border Style="{StaticResource SettingsRow}">
                                     <DockPanel>
+                                        <ui:Button x:Name="ShowKeyButton" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="8,0,0,0"
+                                                   Click="ShowKey_Click">
+                                            <ui:SymbolIcon x:Name="ShowKeyIcon" FontSize="16" />
+                                        </ui:Button>
                                         <Grid DockPanel.Dock="Right" VerticalAlignment="Center" Width="320">
                                             <PasswordBox x:Name="MaskedKeyBox" IsEnabled="False" />
                                             <TextBox x:Name="VisibleKeyBox" IsReadOnly="True" Visibility="Collapsed" />
                                         </Grid>
                                         <TextBlock Style="{StaticResource RowLabel}" Text="共有キー" />
-                                    </DockPanel>
-                                </Border>
-                                <Border Style="{StaticResource SettingsRow}">
-                                    <DockPanel>
-                                        <ui:ToggleSwitch x:Name="ShowKeyBox" DockPanel.Dock="Right" VerticalAlignment="Center" Click="ShowKey_Click"
-                                                         AutomationProperties.Name="共有キーを表示" />
-                                        <TextBlock Style="{StaticResource RowLabel}" Text="共有キーを表示" />
                                     </DockPanel>
                                 </Border>
                                 <Border Style="{StaticResource SettingsRow}">

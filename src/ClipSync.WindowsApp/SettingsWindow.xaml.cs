@@ -24,6 +24,7 @@ public partial class SettingsWindow : FluentWindow
     private readonly DispatcherTimer _connectionTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private AppConfig _savedConfig;
     private string _sharedKey;
+    private bool _showKey;
     private object?[] _savedValues;
     private bool _saving;
     private bool _allowClose;
@@ -161,11 +162,19 @@ public partial class SettingsWindow : FluentWindow
         _showPairingQrCode();
     }
 
-    private void ShowKey_Click(object sender, RoutedEventArgs e) => UpdateKeyDisplay();
+    private void ShowKey_Click(object sender, RoutedEventArgs e)
+    {
+        _showKey = !_showKey;
+        UpdateKeyDisplay();
+    }
 
     private void UpdateKeyDisplay()
     {
-        bool show = ShowKeyBox.IsChecked == true;
+        bool show = _showKey;
+        var action = show ? "共有キーを隠す" : "共有キーを表示";
+        ShowKeyIcon.Symbol = show ? SymbolRegular.EyeOff24 : SymbolRegular.Eye24;
+        ShowKeyButton.ToolTip = action;
+        System.Windows.Automation.AutomationProperties.SetName(ShowKeyButton, action);
         MaskedKeyBox.Password = _sharedKey;
         VisibleKeyBox.Text = show ? _sharedKey : "";
         MaskedKeyBox.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
