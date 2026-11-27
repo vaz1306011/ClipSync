@@ -40,8 +40,8 @@ internal static class OtpExtractor
             try
             {
                 var match = CreateCustomPattern(config.OtpPattern).Match(text);
-                if (match.Success && CodeRegex.Match(match.Value) is { Success: true } customCode)
-                    return customCode.Value;
+                if (ExtractCustom(match, text) is { } customCode)
+                    return customCode;
             }
             catch (Exception ex) when (ex is ArgumentException or RegexMatchTimeoutException)
             {
@@ -75,6 +75,28 @@ internal static class OtpExtractor
         return CodeRegex.Matches(text)
             .OrderBy(code => keywords.Min(keyword => Distance(code, keyword)))
             .FirstOrDefault()
+            ?.Value;
+    }
+
+    /// <summary>
+    /// The code a custom pattern's match names: the group "code", else the first
+    /// group if it holds a digit, else the first ordinary code inside the match.
+    /// </summary>
+    public static string? ExtractCustom(Match match, string text)
+    {
+        if (!match.Success)
+            return null;
+
+        if (match.Groups["code"] is { Success: true, Length: > 0 } named)
+            return named.Value;
+
+        if (match.Groups.Count > 1 && match.Groups[1].Value is var first && first.Any(char.IsDigit))
+            return first;
+
+        // Searched in the whole text, so that what surrounds the digits still
+        // tells phone numbers, dates and amounts apart.
+        return CodeRegex.Matches(text)
+            .FirstOrDefault(code => code.Index >= match.Index && code.Index + code.Length <= match.Index + match.Length)
             ?.Value;
     }
 

@@ -167,9 +167,18 @@ public partial class SettingsWindow : FluentWindow
             var config = _savedConfig.Copy();
             config.NormalizeOtp = NormalizeOtpBox.IsChecked == true;
             config.ExcludeOtpUrls = ExcludeOtpUrlsBox.IsChecked == true;
-            var match = OtpExtractor.CreateCustomPattern(PatternBox.Text)
-                .Match(OtpExtractor.Prepare(PatternSampleBox.Text, config));
-            ShowNotice(match.Success ? $"一致: {match.Value}" : "一致する部分がありません。");
+            var text = OtpExtractor.Prepare(PatternSampleBox.Text, config);
+            var match = OtpExtractor.CreateCustomPattern(PatternBox.Text.Trim()).Match(text);
+            if (!match.Success)
+            {
+                ShowNotice("一致する部分がありません。");
+                return;
+            }
+
+            var code = OtpExtractor.ExtractCustom(match, text);
+            ShowNotice($"一致: {match.Value}\n" + (code is null
+                ? "このパターンからは認証コードを取り出せないため、標準の検出が使われます。"
+                : $"認証コード: {code}"));
         }
         catch (Exception ex) when (ex is ArgumentException or RegexMatchTimeoutException)
         {
