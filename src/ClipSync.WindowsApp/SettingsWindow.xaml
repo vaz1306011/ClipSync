@@ -187,6 +187,36 @@
                 </ScrollViewer>
             </TabItem>
 
+            <TabItem Header="接続">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="0,0,8,0">
+                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
+                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
+                            <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="ペアリング" />
+                                <TextBlock Margin="0,0,0,10" Opacity="0.72" Text="QR コードを使って iPhone と接続します。" />
+                                <Button HorizontalAlignment="Left" Content="QR コードを表示" Click="ShowPairingQrCode_Click" />
+                            </StackPanel>
+                        </ui:Card>
+                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
+                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
+                            <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="サーバー" />
+                                <TextBlock Margin="0,3,0,5" Text="ポート番号" />
+                                <TextBox Width="140" HorizontalAlignment="Left" x:Name="PortBox" />
+                                <TextBlock Margin="0,12,0,5" Text="共有キー" />
+                                <Grid Width="320" HorizontalAlignment="Left">
+                                    <PasswordBox x:Name="MaskedKeyBox" IsEnabled="False" />
+                                    <TextBox x:Name="VisibleKeyBox" IsReadOnly="True" Visibility="Collapsed" />
+                                </Grid>
+                                <CheckBox Margin="0,10,0,4" x:Name="ShowKeyBox" Content="共有キーを表示" Click="ShowKey_Click" />
+                                <Button Margin="0,8,0,0" HorizontalAlignment="Left" Content="共有キーを再生成" Click="RegenerateKey_Click" />
+                            </StackPanel>
+                        </ui:Card>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <TabItem Header="同期">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="0,0,8,0">
@@ -248,36 +278,6 @@
                                 <CheckBox Margin="0,10,0,4" x:Name="NormalizeOtpBox" Content="検出前に文字を NFKC 正規化する" IsChecked="True" />
                                 <CheckBox Margin="0,4" x:Name="ExcludeOtpUrlsBox" Content="検出前に URL を除外する" IsChecked="True" />
                                 <Button Margin="0,12,0,0" HorizontalAlignment="Left" Content="正規表現をテスト" Click="TestPattern_Click" />
-                            </StackPanel>
-                        </ui:Card>
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
-
-            <TabItem Header="接続">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="0,0,8,0">
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="ペアリング" />
-                                <TextBlock Margin="0,0,0,10" Opacity="0.72" Text="QR コードを使って iPhone と接続します。" />
-                                <Button HorizontalAlignment="Left" Content="QR コードを表示" Click="ShowPairingQrCode_Click" />
-                            </StackPanel>
-                        </ui:Card>
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="サーバー" />
-                                <TextBlock Margin="0,3,0,5" Text="ポート番号" />
-                                <TextBox Width="140" HorizontalAlignment="Left" x:Name="PortBox" />
-                                <TextBlock Margin="0,12,0,5" Text="共有キー" />
-                                <Grid Width="320" HorizontalAlignment="Left">
-                                    <PasswordBox x:Name="MaskedKeyBox" IsEnabled="False" />
-                                    <TextBox x:Name="VisibleKeyBox" IsReadOnly="True" Visibility="Collapsed" />
-                                </Grid>
-                                <CheckBox Margin="0,10,0,4" x:Name="ShowKeyBox" Content="共有キーを表示" Click="ShowKey_Click" />
-                                <Button Margin="0,8,0,0" HorizontalAlignment="Left" Content="共有キーを再生成" Click="RegenerateKey_Click" />
                             </StackPanel>
                         </ui:Card>
                     </StackPanel>
