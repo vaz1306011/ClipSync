@@ -55,6 +55,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         ToastNotificationManagerCompat.OnActivated += OnToastActivated;
 
         _portMenuItem = new ToolStripMenuItem(GetDisplayAddressLabel()) { Enabled = false };
+        _ = ReportStartFailureAsync(_serverStart, _config.Port);
 
         var menu = new ContextMenuStrip();
         menu.Items.Add(_portMenuItem);
@@ -136,7 +137,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
             try { await _serverStart; }
             catch when (_serverStart.IsFaulted) { }
 
-            if (next.Port != _config.Port || _serverStart.IsFaulted)
+            if (next.Port != _config.Port)
             {
                 var replacement = CreateServerPipeline(next);
                 await replacement.Server.StartAsync();
@@ -165,6 +166,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
                 _server.UpdateConfig(next);
                 _store.ClearIfDisallowed(next);
                 _config = next;
+
+                // Retry a server that never started, without holding the other
+                // settings back if the port is still taken.
+                if (_serverStart.IsFaulted)
+                {
+                    (_store, _pushService, _server) = CreateServerPipeline(next);
+                    _serverStart = _server.StartAsync();
+                    _ = ReportStartFailureAsync(_serverStart, next.Port);
+                }
             }
 
             _trayIcon.Text = $"ClipSync (port {_config.Port})";
@@ -173,6 +183,19 @@ internal sealed class TrayApplicationContext : ApplicationContext
         finally
         {
             _settingsLock.Release();
+        }
+    }
+
+    private async Task ReportStartFailureAsync(Task start, int port)
+    {
+        try
+        {
+            await start;
+        }
+        catch (Exception ex)
+        {
+            _uiContext.Post(_ => _trayIcon.ShowBalloonTip(10000, "ClipSync",
+                $"ポート {port} でサーバーを起動できませんでした。\n{ex.Message}", ToolTipIcon.Error), null);
         }
     }
 
