@@ -139,12 +139,6 @@ public partial class SettingsWindow : FluentWindow
         Resources.MergedDictionaries[0] = new ThemesDictionary { Theme = theme };
 
         bool isDark = theme == ApplicationTheme.Dark;
-        Resources["SettingsCheckBorderBrush"] = new System.Windows.Media.SolidColorBrush(isDark
-            ? System.Windows.Media.Color.FromRgb(166, 166, 166)
-            : System.Windows.Media.Color.FromRgb(120, 120, 120));
-        Resources["SettingsCheckHoverBrush"] = isDark
-            ? System.Windows.Media.Brushes.White
-            : System.Windows.Media.Brushes.Black;
         Resources["SettingsBackgroundBrush"] = new System.Windows.Media.SolidColorBrush(isDark
             ? System.Windows.Media.Color.FromRgb(31, 31, 31)
             : System.Windows.Media.Color.FromRgb(247, 247, 247));

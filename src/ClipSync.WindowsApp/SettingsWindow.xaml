@@ -4,9 +4,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="ClipSync の設定"
-    Width="820"
+    Width="900"
     Height="700"
-    MinWidth="560"
+    MinWidth="720"
     MinHeight="420"
     WindowStartupLocation="CenterScreen"
     ResizeMode="CanResize"
@@ -19,49 +19,39 @@
                 <ui:ThemesDictionary Theme="Light" />
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
-            <Style TargetType="{x:Type CheckBox}">
-                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type CheckBox}">
-                            <Grid Background="Transparent" MinHeight="24">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border x:Name="CheckOutline" Width="20" Height="20" Margin="0,0,8,0"
-                                        VerticalAlignment="Center" CornerRadius="4" BorderThickness="1"
-                                        BorderBrush="{DynamicResource SettingsCheckBorderBrush}">
-                                    <Path x:Name="CheckMark" Data="M 1,5 L 4,8 L 10,2"
-                                          Stroke="White" StrokeThickness="1.7" StrokeLineJoin="Round"
-                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                          HorizontalAlignment="Center" VerticalAlignment="Center"
-                                          Visibility="Collapsed" />
-                                </Border>
-                                <ContentPresenter Grid.Column="1" RecognizesAccessKey="True"
-                                                  VerticalAlignment="Center" />
-                            </Grid>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="CheckOutline" Property="Background" Value="#0067C0" />
-                                    <Setter TargetName="CheckOutline" Property="BorderBrush" Value="#0067C0" />
-                                    <Setter TargetName="CheckMark" Property="Visibility" Value="Visible" />
-                                </Trigger>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="CheckOutline" Property="BorderBrush"
-                                            Value="{DynamicResource SettingsCheckHoverBrush}" />
-                                </Trigger>
-                                <Trigger Property="IsKeyboardFocused" Value="True">
-                                    <Setter TargetName="CheckOutline" Property="BorderBrush"
-                                            Value="{DynamicResource SettingsCheckHoverBrush}" />
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Opacity" Value="0.5" />
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
+            <Style x:Key="GroupHeader" TargetType="{x:Type TextBlock}">
+                <Setter Property="Margin" Value="2,0,0,8" />
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+            <Style x:Key="SettingsGroup" TargetType="{x:Type Border}">
+                <Setter Property="Margin" Value="0,0,0,20" />
+                <Setter Property="Padding" Value="18,0" />
+                <Setter Property="CornerRadius" Value="10" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Background" Value="{DynamicResource SettingsCardBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource SettingsCardBorderBrush}" />
+            </Style>
+            <!-- The first row of a group sets BorderThickness to 0 to drop its divider. -->
+            <Style x:Key="SettingsRow" TargetType="{x:Type Border}">
+                <Setter Property="MinHeight" Value="56" />
+                <Setter Property="Padding" Value="0,12" />
+                <Setter Property="BorderThickness" Value="0,1,0,0" />
+                <Setter Property="BorderBrush" Value="{DynamicResource SettingsCardBorderBrush}" />
+            </Style>
+            <Style x:Key="RowText" TargetType="{x:Type StackPanel}">
+                <Setter Property="Margin" Value="0,0,16,0" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+            <Style x:Key="RowLabel" TargetType="{x:Type TextBlock}">
+                <Setter Property="Margin" Value="0,0,16,0" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+            <Style x:Key="RowDescription" TargetType="{x:Type TextBlock}">
+                <Setter Property="Margin" Value="0,4,0,0" />
+                <Setter Property="Opacity" Value="0.72" />
+                <Setter Property="TextWrapping" Value="Wrap" />
             </Style>
         </ResourceDictionary>
     </ui:FluentWindow.Resources>
@@ -142,190 +132,323 @@
             </TabControl.ItemContainerStyle>
             <TabItem Header="一般">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="0,0,8,0">
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="iPhone との接続" />
-                                <StackPanel Orientation="Horizontal">
-                                    <Ellipse x:Name="ConnectionDot" Width="10" Height="10" Margin="0,0,8,0"
-                                             VerticalAlignment="Center" />
-                                    <TextBlock x:Name="ConnectionStateText" VerticalAlignment="Center" />
-                                </StackPanel>
-                                <TextBlock x:Name="ConnectionDetailText" Margin="0,6,0,0" Opacity="0.72" TextWrapping="Wrap" />
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="iPhone との接続" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Orientation="Horizontal">
+                                            <Ellipse x:Name="ConnectionDot" Width="10" Height="10" Margin="0,0,8,0"
+                                                     VerticalAlignment="Center" />
+                                            <TextBlock x:Name="ConnectionStateText" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <StackPanel Style="{StaticResource RowText}">
+                                            <TextBlock Text="接続状態" />
+                                            <TextBlock x:Name="ConnectionDetailText" Style="{StaticResource RowDescription}" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="動作" />
-                                <DockPanel Margin="0,5">
-                                    <ui:ToggleSwitch x:Name="SyncPausedBox" DockPanel.Dock="Right"
-                                                     AutomationProperties.Name="クリップボード同期を一時停止する"
-                                                     OnContent="オン" OffContent="オフ" />
-                                    <TextBlock VerticalAlignment="Center" TextWrapping="Wrap"
-                                               Text="クリップボード同期を一時停止する" />
-                                </DockPanel>
+                        </Border>
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="動作" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <ui:ToggleSwitch x:Name="SyncPausedBox" DockPanel.Dock="Right" VerticalAlignment="Center"
+                                                         AutomationProperties.Name="クリップボード同期を一時停止する" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="クリップボード同期を一時停止する" />
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="外観" />
-                                <ComboBox x:Name="ThemePicker" Width="160" HorizontalAlignment="Left"
-                                          AutomationProperties.Name="配色テーマ">
-                                    <ComboBoxItem Content="ライト" />
-                                    <ComboBoxItem Content="ダーク" />
-                                </ComboBox>
+                        </Border>
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="外観" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <ComboBox x:Name="ThemePicker" DockPanel.Dock="Right" VerticalAlignment="Center" Width="260"
+                                                  AutomationProperties.Name="配色テーマ">
+                                            <ComboBoxItem Content="ライト" />
+                                            <ComboBoxItem Content="ダーク" />
+                                        </ComboBox>
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="配色テーマ" />
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="起動" />
-                                <CheckBox Margin="0,5" x:Name="StartOnSignInBox" Content="Windows へのサインイン時に ClipSync を起動する" />
+                        </Border>
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="起動" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <ui:ToggleSwitch x:Name="StartOnSignInBox" DockPanel.Dock="Right" VerticalAlignment="Center"
+                                                         AutomationProperties.Name="Windows へのサインイン時に ClipSync を起動する" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="Windows へのサインイン時に ClipSync を起動する" />
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="トレイアイコン" />
-                                <TextBlock Margin="0,3,0,6" Text="ダブルクリック時の動作" />
-                                <ComboBox x:Name="DoubleClickActionPicker" Width="300" HorizontalAlignment="Left" SelectedIndex="0"
-                                          AutomationProperties.Name="ダブルクリック時の動作">
-                                    <ComboBoxItem Content="設定を開く" />
-                                    <ComboBoxItem Content="ペアリング QR コードを表示" />
-                                </ComboBox>
+                        </Border>
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="トレイアイコン" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <ComboBox x:Name="DoubleClickActionPicker" DockPanel.Dock="Right" VerticalAlignment="Center" Width="260" SelectedIndex="0"
+                                                  AutomationProperties.Name="ダブルクリック時の動作">
+                                            <ComboBoxItem Content="設定を開く" />
+                                            <ComboBoxItem Content="ペアリング QR コードを表示" />
+                                        </ComboBox>
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="ダブルクリック時の動作" />
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="リセット" />
-                                <TextBlock Margin="0,0,0,10" Opacity="0.72" TextWrapping="Wrap"
-                                           Text="すべての設定を初期値に戻します。共有キーは変わりません。「適用」または「OK」を押すまで保存されません。" />
-                                <Button HorizontalAlignment="Left" Content="すべての設定をリセット" Click="ResetSettings_Click" />
+                        </Border>
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="リセット" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" VerticalAlignment="Center" Content="すべての設定をリセット" Click="ResetSettings_Click" />
+                                        <StackPanel Style="{StaticResource RowText}">
+                                            <TextBlock TextWrapping="Wrap" Text="設定の初期化" />
+                                            <TextBlock Style="{StaticResource RowDescription}"
+                                                       Text="すべての設定を初期値に戻します。共有キーは変わりません。「適用」または「OK」を押すまで保存されません。" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
             <TabItem Header="接続">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="0,0,8,0">
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="ペアリング" />
-                                <TextBlock Margin="0,0,0,10" Opacity="0.72" Text="QR コードを使って iPhone と接続します。" />
-                                <Button HorizontalAlignment="Left" Content="QR コードを表示" Click="ShowPairingQrCode_Click" />
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="ペアリング" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" VerticalAlignment="Center" Content="QR コードを表示" Click="ShowPairingQrCode_Click" />
+                                        <StackPanel Style="{StaticResource RowText}">
+                                            <TextBlock TextWrapping="Wrap" Text="ペアリング QR コード" />
+                                            <TextBlock Style="{StaticResource RowDescription}"
+                                                       Text="QR コードを使って iPhone と接続します。" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="サーバー" />
-                                <TextBlock Margin="0,3,0,5" Text="ポート番号" />
-                                <TextBox Width="140" HorizontalAlignment="Left" x:Name="PortBox" />
-                                <TextBlock Margin="0,12,0,5" Text="共有キー" />
-                                <Grid Width="320" HorizontalAlignment="Left">
-                                    <PasswordBox x:Name="MaskedKeyBox" IsEnabled="False" />
-                                    <TextBox x:Name="VisibleKeyBox" IsReadOnly="True" Visibility="Collapsed" />
-                                </Grid>
-                                <CheckBox Margin="0,10,0,4" x:Name="ShowKeyBox" Content="共有キーを表示" Click="ShowKey_Click" />
-                                <Button Margin="0,8,0,0" HorizontalAlignment="Left" Content="共有キーを再生成" Click="RegenerateKey_Click" />
+                        </Border>
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="サーバー" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <TextBox x:Name="PortBox" DockPanel.Dock="Right" VerticalAlignment="Center" Width="140" AutomationProperties.Name="ポート番号" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="ポート番号" />
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <DockPanel>
+                                        <Grid DockPanel.Dock="Right" VerticalAlignment="Center" Width="320">
+                                            <PasswordBox x:Name="MaskedKeyBox" IsEnabled="False" />
+                                            <TextBox x:Name="VisibleKeyBox" IsReadOnly="True" Visibility="Collapsed" />
+                                        </Grid>
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="共有キー" />
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <DockPanel>
+                                        <ui:ToggleSwitch x:Name="ShowKeyBox" DockPanel.Dock="Right" VerticalAlignment="Center" Click="ShowKey_Click"
+                                                         AutomationProperties.Name="共有キーを表示" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="共有キーを表示" />
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" VerticalAlignment="Center" Content="共有キーを再生成" Click="RegenerateKey_Click" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="共有キーの再生成" />
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
             <TabItem Header="同期">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="0,0,8,0">
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="クリップボード" />
-                                <CheckBox Margin="0,5" x:Name="SyncTextBox" Content="テキストを同期する" IsChecked="True" />
-                                <CheckBox Margin="0,5" x:Name="SyncImagesBox" Content="画像を同期する" IsChecked="True" />
-                                <CheckBox Margin="0,5" x:Name="SyncFilesBox" Content="ファイルを同期する" IsChecked="True" />
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="クリップボード" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <ui:ToggleSwitch x:Name="SyncTextBox" DockPanel.Dock="Right" VerticalAlignment="Center" IsChecked="True"
+                                                         AutomationProperties.Name="テキストを同期する" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="テキストを同期する" />
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <DockPanel>
+                                        <ui:ToggleSwitch x:Name="SyncImagesBox" DockPanel.Dock="Right" VerticalAlignment="Center" IsChecked="True"
+                                                         AutomationProperties.Name="画像を同期する" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="画像を同期する" />
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <DockPanel>
+                                        <ui:ToggleSwitch x:Name="SyncFilesBox" DockPanel.Dock="Right" VerticalAlignment="Center" IsChecked="True"
+                                                         AutomationProperties.Name="ファイルを同期する" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="ファイルを同期する" />
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="ファイル" />
-                                <TextBlock Margin="0,3,0,6" Text="サイズ上限 (MB、0 は無制限)" />
-                                <TextBox Width="140" HorizontalAlignment="Left" x:Name="FileLimitBox" />
-                                <CheckBox Margin="0,12,0,4" x:Name="IgnoreLocalFilesBox" Content="Windowsでコピーしたファイルを送信しない" />
+                        </Border>
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="ファイル" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <TextBox x:Name="FileLimitBox" DockPanel.Dock="Right" VerticalAlignment="Center" Width="140" AutomationProperties.Name="サイズ上限 (MB、0 は無制限)" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="サイズ上限 (MB、0 は無制限)" />
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <DockPanel>
+                                        <ui:ToggleSwitch x:Name="IgnoreLocalFilesBox" DockPanel.Dock="Right" VerticalAlignment="Center"
+                                                         AutomationProperties.Name="Windowsでコピーしたファイルを送信しない" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="Windowsでコピーしたファイルを送信しない" />
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
             <TabItem Header="認証コード">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="0,0,8,0">
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="検出" />
-                                <CheckBox Margin="0,5" x:Name="DetectOtpBox" Content="認証コードの検出を有効にする" IsChecked="True" />
-                                <TextBlock Margin="0,12,0,5" Text="キーワード (1 行に 1 つ)" />
-                                <TextBox Height="100" AcceptsReturn="True" x:Name="KeywordsBox" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="検出" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <ui:ToggleSwitch x:Name="DetectOtpBox" DockPanel.Dock="Right" VerticalAlignment="Center" IsChecked="True"
+                                                         AutomationProperties.Name="認証コードの検出を有効にする" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="認証コードの検出を有効にする" />
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <DockPanel>
+                                        <TextBox x:Name="KeywordsBox" DockPanel.Dock="Right" VerticalAlignment="Top" Width="260" Height="100" AcceptsReturn="True"
+                                                 TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                                 AutomationProperties.Name="キーワード" />
+                                        <StackPanel Style="{StaticResource RowText}">
+                                            <TextBlock TextWrapping="Wrap" Text="キーワード" />
+                                            <TextBlock Style="{StaticResource RowDescription}"
+                                                       Text="1 行に 1 つ" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="詳細" />
-                                <TextBlock Margin="0,3,0,5" Text="追加の正規表現 (1 行に 1 ルール)" />
-                                <TextBox Height="100" AcceptsReturn="True" x:Name="PatternBox" MaxLength="4000"
-                                         TextWrapping="NoWrap" VerticalScrollBarVisibility="Auto"
-                                         HorizontalScrollBarVisibility="Auto" />
-                                <TextBlock Margin="0,4,0,0" Opacity="0.72" TextWrapping="Wrap"
-                                           Text="上の行から順に試し、最初にコードを取り出せたルールを使います。どれも当てはまらなければ標準の検出を使います。取り出す部分は (?&lt;code&gt;…) か最初の (…) で指定し、省略すると一致した範囲内の 4〜8 桁の数字を使います。" />
-                                <TextBlock Margin="0,10,0,4" Text="書き方の例" />
-                                <TextBlock Opacity="0.72" TextWrapping="Wrap">
-                                    <Run FontFamily="Consolas" Text="番号:\s*(?&lt;code&gt;[A-Z0-9]{6})" /><LineBreak />
-                                    <Run Text="　「番号: A1B2C3」→ A1B2C3" /><LineBreak />
-                                    <Run FontFamily="Consolas" Text="PIN\D*(\d{3})" /><LineBreak />
-                                    <Run Text="　「PIN 123」→ 123" /><LineBreak />
-                                    <Run FontFamily="Consolas" Text="暗証番号は\d+" /><LineBreak />
-                                    <Run Text="　「暗証番号は4567です」→ 4567" />
-                                </TextBlock>
-                                <TextBlock Margin="0,10,0,4" Text="テスト用のメッセージ" />
-                                <TextBox x:Name="PatternSampleBox" MaxLength="4000" Text="確認コードは 123456 です。" />
-                                <CheckBox Margin="0,10,0,4" x:Name="NormalizeOtpBox" Content="検出前に文字を NFKC 正規化する" IsChecked="True" />
-                                <CheckBox Margin="0,4" x:Name="ExcludeOtpUrlsBox" Content="検出前に URL を除外する" IsChecked="True" />
-                                <Button Margin="0,12,0,0" HorizontalAlignment="Left" Content="正規表現をテスト" Click="TestPattern_Click" />
+                        </Border>
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="詳細" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <TextBox x:Name="PatternBox" DockPanel.Dock="Right" VerticalAlignment="Top" Width="260" Height="100" AcceptsReturn="True" MaxLength="4000"
+                                                 TextWrapping="NoWrap" VerticalScrollBarVisibility="Auto"
+                                                 HorizontalScrollBarVisibility="Auto"
+                                                 AutomationProperties.Name="追加の正規表現" />
+                                        <StackPanel Style="{StaticResource RowText}">
+                                            <TextBlock TextWrapping="Wrap" Text="追加の正規表現" />
+                                            <TextBlock Style="{StaticResource RowDescription}"
+                                                       Text="1 行に 1 ルール。上の行から順に試し、最初にコードを取り出せたルールを使います。どれも当てはまらなければ標準の検出を使います。取り出す部分は (?&lt;code&gt;…) か最初の (…) で指定し、省略すると一致した範囲内の 4〜8 桁の数字を使います。" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <StackPanel>
+                                        <TextBlock Text="書き方の例" />
+                                        <TextBlock Style="{StaticResource RowDescription}">
+                                            <Run FontFamily="Consolas" Text="番号:\s*(?&lt;code&gt;[A-Z0-9]{6})" /><LineBreak />
+                                            <Run Text="　「番号: A1B2C3」→ A1B2C3" /><LineBreak />
+                                            <Run FontFamily="Consolas" Text="PIN\D*(\d{3})" /><LineBreak />
+                                            <Run Text="　「PIN 123」→ 123" /><LineBreak />
+                                            <Run FontFamily="Consolas" Text="暗証番号は\d+" /><LineBreak />
+                                            <Run Text="　「暗証番号は4567です」→ 4567" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Width="260">
+                                            <TextBox x:Name="PatternSampleBox" MaxLength="4000" Text="確認コードは 123456 です。"
+                                                     AutomationProperties.Name="テスト用のメッセージ" />
+                                            <Button Margin="0,8,0,0" HorizontalAlignment="Right" Content="正規表現をテスト"
+                                                    Click="TestPattern_Click" />
+                                        </StackPanel>
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="テスト用のメッセージ" />
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <DockPanel>
+                                        <ui:ToggleSwitch x:Name="NormalizeOtpBox" DockPanel.Dock="Right" VerticalAlignment="Center" IsChecked="True"
+                                                         AutomationProperties.Name="検出前に文字を NFKC 正規化する" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="検出前に文字を NFKC 正規化する" />
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <DockPanel>
+                                        <ui:ToggleSwitch x:Name="ExcludeOtpUrlsBox" DockPanel.Dock="Right" VerticalAlignment="Center" IsChecked="True"
+                                                         AutomationProperties.Name="検出前に URL を除外する" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="検出前に URL を除外する" />
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
             <TabItem Header="通知">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="0,0,8,0">
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="認証コード" />
-                                <TextBlock Margin="0,3,0,6" Text="通知方法" />
-                                <ComboBox x:Name="NotificationModePicker" Width="300" HorizontalAlignment="Left" SelectedIndex="0">
-                                    <ComboBoxItem Content="トースト通知" />
-                                    <ComboBoxItem Content="入力欄の近くにボタン" />
-                                    <ComboBoxItem Content="両方" />
-                                </ComboBox>
-                                <CheckBox Margin="0,12,0,4" x:Name="CopyOtpAutomaticallyBox" Content="通知時にコードを自動コピーする" />
-                                <TextBlock Margin="0,12,0,5" Text="コードボタンの表示時間 (秒)" />
-                                <TextBox Width="120" HorizontalAlignment="Left" x:Name="PopupSecondsBox" />
+                    <StackPanel Margin="0,0,14,0">
+                        <TextBlock Style="{StaticResource GroupHeader}" Text="認証コード" />
+                        <Border Style="{StaticResource SettingsGroup}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SettingsRow}" BorderThickness="0">
+                                    <DockPanel>
+                                        <ComboBox x:Name="NotificationModePicker" DockPanel.Dock="Right" VerticalAlignment="Center" Width="260" SelectedIndex="0"
+                                                  AutomationProperties.Name="通知方法">
+                                            <ComboBoxItem Content="トースト通知" />
+                                            <ComboBoxItem Content="入力欄の近くにボタン" />
+                                            <ComboBoxItem Content="両方" />
+                                        </ComboBox>
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="通知方法" />
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <DockPanel>
+                                        <ui:ToggleSwitch x:Name="CopyOtpAutomaticallyBox" DockPanel.Dock="Right" VerticalAlignment="Center"
+                                                         AutomationProperties.Name="通知時にコードを自動コピーする" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="通知時にコードを自動コピーする" />
+                                    </DockPanel>
+                                </Border>
+                                <Border Style="{StaticResource SettingsRow}">
+                                    <DockPanel>
+                                        <TextBox x:Name="PopupSecondsBox" DockPanel.Dock="Right" VerticalAlignment="Center" Width="140" AutomationProperties.Name="コードボタンの表示時間 (秒)" />
+                                        <TextBlock Style="{StaticResource RowLabel}" Text="コードボタンの表示時間 (秒)" />
+                                    </DockPanel>
+                                </Border>
                             </StackPanel>
-                        </ui:Card>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
