@@ -36,7 +36,7 @@ Safari でリンクを開き、「ショートカットを追加」をタップ�
 
 トレイアイコンをダブルクリックすると設定画面が開きます。設定画面の「一般」で、ペアリング QR コードの表示に変更できます。
 
-- 「設定」：同期する内容、認証コードの検出と通知、ポート番号と共有キーなどを変更（「一般」から初期値へのリセットも可能）
+- 「設定」：iPhone との接続状態の確認（「一般」。直近 10 秒以内に通信があれば「接続中」）、同期する内容、認証コードの検出と通知、ポート番号と共有キーなどを変更（「一般」から初期値へのリセットも可能）
 - 「ペアリング QR コードを表示」：Shortcuts などでスキャンしてペアリング
 - 「設定を再読み込み」：設定ファイルを変更した後に反映
 
@@ -122,6 +122,7 @@ dotnet run --project src/ClipSync.WindowsApp
 | トレイメニューの項目                 | `TrayApplicationContext.cs` のコンストラクター                                                                               |
 | 認証コードとみなす条件               | キーワードと追加の正規表現（1 行に 1 ルール、上から順）は設定画面。桁数などは `Server/OtpExtractor.cs` の `CodeRegex`              |
 | `/otp` の上限サイズ                  | `Server/ClipSyncServer.cs` の `MaxOtpBodyBytes`                                                                              |
+| 「接続中」とみなす時間               | `Server/ClipSyncServer.cs` の `ContactTimeout`                                                                               |
 | 同じメッセージを無視する時間         | `Server/OtpInbox.cs` の `Memory`                                                                                             |
 | 浮動ボタンの表示時間・大きさ・見た目 | 表示時間は設定画面。他は `OtpPopupForm.cs` の `BaseWidth` / `BaseHeight`、コンストラクター（色）、`OnPaint`（文字・アイコン） |
 
