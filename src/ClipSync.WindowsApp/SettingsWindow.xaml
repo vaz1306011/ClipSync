@@ -146,6 +146,19 @@
                         <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
                                  BorderBrush="{DynamicResource SettingsCardBorderBrush}">
                             <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="動作" />
+                                <DockPanel Margin="0,5">
+                                    <ui:ToggleSwitch x:Name="SyncPausedBox" DockPanel.Dock="Right"
+                                                     AutomationProperties.Name="クリップボード同期を一時停止する"
+                                                     OnContent="オン" OffContent="オフ" />
+                                    <TextBlock VerticalAlignment="Center" TextWrapping="Wrap"
+                                               Text="クリップボード同期を一時停止する" />
+                                </DockPanel>
+                            </StackPanel>
+                        </ui:Card>
+                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
+                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
+                            <StackPanel Margin="18">
                                 <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="外観" />
                                 <ComboBox x:Name="ThemePicker" Width="160" HorizontalAlignment="Left"
                                           AutomationProperties.Name="配色テーマ">
@@ -159,13 +172,6 @@
                             <StackPanel Margin="18">
                                 <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="起動" />
                                 <CheckBox Margin="0,5" x:Name="StartOnSignInBox" Content="Windows へのサインイン時に ClipSync を起動する" />
-                                <DockPanel Margin="0,5">
-                                    <ui:ToggleSwitch x:Name="SyncPausedBox" DockPanel.Dock="Right"
-                                                     AutomationProperties.Name="クリップボード同期を一時停止する"
-                                                     OnContent="オン" OffContent="オフ" />
-                                    <TextBlock VerticalAlignment="Center" TextWrapping="Wrap"
-                                               Text="クリップボード同期を一時停止する" />
-                                </DockPanel>
                             </StackPanel>
                         </ui:Card>
                     </StackPanel>
