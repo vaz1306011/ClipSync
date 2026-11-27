@@ -20,7 +20,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private readonly SemaphoreSlim _settingsLock = new(1);
     private Task _serverStart;
     private SettingsWindow? _settingsWindow;
-    private QrCodeForm? _qrCodeForm;
+    private QrCodeWindow? _qrCodeWindow;
     private bool _exitRequested;
     private ClipboardStore _store;
     private PushNotificationService _pushService;
@@ -357,9 +357,9 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
     private void ShowPairingQrCode()
     {
-        if (_qrCodeForm is not null)
+        if (_qrCodeWindow is not null)
         {
-            _qrCodeForm.Activate();
+            _qrCodeWindow.Activate();
             return;
         }
 
@@ -376,26 +376,37 @@ internal sealed class TrayApplicationContext : ApplicationContext
         var payload = PairingQrCode.BuildPayload(serverUrl, _config.SharedSecret);
         using var qrImage = PairingQrCode.GenerateImage(payload);
 
-        using var form = new QrCodeForm(qrImage, payload);
+        var window = new QrCodeWindow(qrImage, _settingsWindow?.SelectedTheme ?? WindowTheme.Resolve(_config));
+        if (_settingsWindow is { IsVisible: true })
+        {
+            window.Owner = _settingsWindow;
+            window.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
+        }
+
         try
         {
-            _qrCodeForm = form;
-            form.ShowDialog();
+            _qrCodeWindow = window;
+            window.ShowDialog();
         }
         finally
         {
-            _qrCodeForm = null;
+            _qrCodeWindow = null;
         }
+
+        // With settings still open, ShowSettings exits once its own loop ends.
+        if (_exitRequested && _settingsWindow is null)
+            ExitApplication();
     }
 
     private void ExitApplication()
     {
-        // The settings window runs its own modal loop: close it first, and
-        // ShowSettings comes back here once that loop has ended.
-        if (_settingsWindow is not null)
+        // The WPF windows run their own modal loops: close them first, and
+        // whoever opened them comes back here once the loop has ended.
+        if (_settingsWindow is not null || _qrCodeWindow is not null)
         {
             _exitRequested = true;
-            _settingsWindow.CloseWithoutSaving();
+            _qrCodeWindow?.Close();
+            _settingsWindow?.CloseWithoutSaving();
             return;
         }
 

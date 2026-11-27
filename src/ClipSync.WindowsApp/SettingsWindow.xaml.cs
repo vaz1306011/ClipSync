@@ -6,7 +6,6 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
-using Wpf.Ui.Markup;
 using MessageBoxResult = System.Windows.MessageBoxResult;
 
 namespace ClipSync.WindowsApp;
@@ -15,9 +14,6 @@ internal sealed record ConnectionStatus(bool ServerFailed, bool Connected, Clien
 
 public partial class SettingsWindow : FluentWindow
 {
-    private static readonly string ThemePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ClipSync", "theme.txt");
-
     private readonly Action _showPairingQrCode;
     private readonly Func<AppConfig, Task> _applySettings;
     private readonly Func<ConnectionStatus> _getConnectionStatus;
@@ -38,11 +34,10 @@ public partial class SettingsWindow : FluentWindow
         _savedConfig = config;
         _sharedKey = config.SharedSecret;
         InitializeComponent();
-        var theme = (config.DarkTheme ?? (ReadTheme() == ApplicationTheme.Dark))
-            ? ApplicationTheme.Dark : ApplicationTheme.Light;
+        var theme = WindowTheme.Resolve(config);
         ShowValues(config);
         UpdateKeyDisplay();
-        ApplyTheme(theme);
+        WindowTheme.Apply(Resources, theme);
         ThemePicker.SelectedIndex = theme == ApplicationTheme.Dark ? 1 : 0;
         ThemePicker.SelectionChanged += ThemePicker_SelectionChanged;
 
@@ -115,41 +110,12 @@ public partial class SettingsWindow : FluentWindow
 
     private void UpdateApplyButton() => ApplyButton.IsEnabled = HasChanges;
 
-    private static ApplicationTheme ReadTheme()
-    {
-        try
-        {
-            return File.Exists(ThemePath) && File.ReadAllText(ThemePath).Trim() == nameof(ApplicationTheme.Dark)
-                ? ApplicationTheme.Dark
-                : ApplicationTheme.Light;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return ApplicationTheme.Light;
-        }
-    }
+    // What the window shows now, which may not be applied yet.
+    internal ApplicationTheme SelectedTheme =>
+        ThemePicker.SelectedIndex == 1 ? ApplicationTheme.Dark : ApplicationTheme.Light;
 
-    private void ThemePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        var theme = ThemePicker.SelectedIndex == 1 ? ApplicationTheme.Dark : ApplicationTheme.Light;
-        ApplyTheme(theme);
-    }
-
-    private void ApplyTheme(ApplicationTheme theme)
-    {
-        Resources.MergedDictionaries[0] = new ThemesDictionary { Theme = theme };
-
-        bool isDark = theme == ApplicationTheme.Dark;
-        Resources["SettingsBackgroundBrush"] = new System.Windows.Media.SolidColorBrush(isDark
-            ? System.Windows.Media.Color.FromRgb(31, 31, 31)
-            : System.Windows.Media.Color.FromRgb(247, 247, 247));
-        Resources["SettingsCardBrush"] = new System.Windows.Media.SolidColorBrush(isDark
-            ? System.Windows.Media.Color.FromRgb(42, 42, 42)
-            : System.Windows.Media.Colors.White);
-        Resources["SettingsCardBorderBrush"] = new System.Windows.Media.SolidColorBrush(isDark
-            ? System.Windows.Media.Color.FromRgb(63, 63, 63)
-            : System.Windows.Media.Color.FromRgb(225, 225, 225));
-    }
+    private void ThemePicker_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
+        WindowTheme.Apply(Resources, SelectedTheme);
 
     private void ShowPairingQrCode_Click(object sender, RoutedEventArgs e)
     {
