@@ -19,7 +19,7 @@ internal static class OtpExtractor
     // delimited by "no Latin letter on either side" instead.
     public const string DefaultKeywords = "認証\n認證\n驗證\n验证\n確認コード\nワンタイム\nパスコード\nセキュリティコード\ncode\notp\npasscode\nverification";
 
-    public static Regex CreateCustomPattern(string pattern) =>
+    private static Regex CreateCustomPattern(string pattern) =>
         new(pattern, RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(100));
 
     // 4–8 digits that aren't part of a phone number, date, time or amount.
@@ -35,19 +35,8 @@ internal static class OtpExtractor
     public static string? Extract(string message, AppConfig config)
     {
         var text = Prepare(message, config);
-        if (!string.IsNullOrWhiteSpace(config.OtpPattern))
-        {
-            try
-            {
-                var match = CreateCustomPattern(config.OtpPattern).Match(text);
-                if (ExtractCustom(match, text) is { } customCode)
-                    return customCode;
-            }
-            catch (Exception ex) when (ex is ArgumentException or RegexMatchTimeoutException)
-            {
-                // An invalid or slow custom pattern must not block the default detector.
-            }
-        }
+        if (ExtractByRules(text, config.OtpPattern) is { } custom)
+            return custom.Code;
 
         var originBound = OriginBoundRegex.Match(text);
 
@@ -79,10 +68,58 @@ internal static class OtpExtractor
     }
 
     /// <summary>
+    /// Tries the custom patterns, one per line, from the top. The first that
+    /// yields a code wins; an invalid or slow one is reported and skipped so it
+    /// blocks neither the later patterns nor the default detector.
+    /// </summary>
+    public static (int Line, Match Match, string Code)? ExtractByRules(
+        string text, string? patterns, Action<int, Exception>? onError = null)
+    {
+        foreach (var (line, pattern) in SplitPatterns(patterns))
+        {
+            try
+            {
+                var match = CreateCustomPattern(pattern).Match(text);
+                if (ExtractCustom(match, text) is { } code)
+                    return (line, match, code);
+            }
+            catch (Exception ex) when (ex is ArgumentException or RegexMatchTimeoutException)
+            {
+                onError?.Invoke(line, ex);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Throws for the first line that isn't a valid regular expression.</summary>
+    public static void ValidatePatterns(string? patterns)
+    {
+        foreach (var (line, pattern) in SplitPatterns(patterns))
+        {
+            try
+            {
+                CreateCustomPattern(pattern);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new ArgumentException($"正規表現の {line} 行目が正しくありません。\n{ex.Message}", ex);
+            }
+        }
+    }
+
+    // Line numbers count blank lines, so they match what the settings box shows.
+    private static IEnumerable<(int Line, string Pattern)> SplitPatterns(string? patterns) =>
+        (patterns ?? "")
+            .Split('\n')
+            .Select((pattern, index) => (Line: index + 1, Pattern: pattern.Trim()))
+            .Where(rule => rule.Pattern.Length != 0);
+
+    /// <summary>
     /// The code a custom pattern's match names: the group "code", else the first
     /// group if it holds a digit, else the first ordinary code inside the match.
     /// </summary>
-    public static string? ExtractCustom(Match match, string text)
+    private static string? ExtractCustom(Match match, string text)
     {
         if (!match.Success)
             return null;

@@ -1,6 +1,5 @@
 using ClipSync.WindowsApp.Server;
 using System.ComponentModel;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -163,23 +162,20 @@ public partial class SettingsWindow : FluentWindow
 
         try
         {
+            OtpExtractor.ValidatePatterns(PatternBox.Text);
             var config = _savedConfig.Copy();
             config.NormalizeOtp = NormalizeOtpBox.IsChecked == true;
             config.ExcludeOtpUrls = ExcludeOtpUrlsBox.IsChecked == true;
             var text = OtpExtractor.Prepare(PatternSampleBox.Text, config);
-            var match = OtpExtractor.CreateCustomPattern(PatternBox.Text.Trim()).Match(text);
-            if (!match.Success)
-            {
-                ShowNotice("一致する部分がありません。");
-                return;
-            }
 
-            var code = OtpExtractor.ExtractCustom(match, text);
-            ShowNotice($"一致: {match.Value}\n" + (code is null
-                ? "このパターンからは認証コードを取り出せないため、標準の検出が使われます。"
-                : $"認証コード: {code}"));
+            var skipped = "";
+            var result = OtpExtractor.ExtractByRules(text, PatternBox.Text,
+                (line, ex) => skipped += $"\n{line} 行目は処理に時間がかかりすぎるため飛ばされます。");
+            ShowNotice((result is { } found
+                ? $"{found.Line} 行目のルールを使用\n一致: {found.Match.Value}\n認証コード: {found.Code}"
+                : "どのルールからも認証コードを取り出せないため、標準の検出が使われます。") + skipped);
         }
-        catch (Exception ex) when (ex is ArgumentException or RegexMatchTimeoutException)
+        catch (ArgumentException ex)
         {
             ShowNotice(ex.Message);
         }
@@ -208,8 +204,7 @@ public partial class SettingsWindow : FluentWindow
         next.Port = ReadNumber(PortBox.Text, 1, 65535, "ポート番号");
         next.OtpKeywords = KeywordsBox.Text;
         next.OtpPattern = PatternBox.Text.Trim();
-        if (next.OtpPattern.Length != 0)
-            OtpExtractor.CreateCustomPattern(next.OtpPattern);
+        OtpExtractor.ValidatePatterns(PatternBox.Text);
         next.SharedSecret = _sharedKey;
         return next;
     }

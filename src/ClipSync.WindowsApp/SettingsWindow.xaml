@@ -219,10 +219,21 @@
                                  BorderBrush="{DynamicResource SettingsCardBorderBrush}">
                             <StackPanel Margin="18">
                                 <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="詳細" />
-                                <TextBlock Margin="0,3,0,5" Text="追加の正規表現" />
-                                <TextBox x:Name="PatternBox" MaxLength="1000" />
+                                <TextBlock Margin="0,3,0,5" Text="追加の正規表現 (1 行に 1 ルール)" />
+                                <TextBox Height="100" AcceptsReturn="True" x:Name="PatternBox" MaxLength="4000"
+                                         TextWrapping="NoWrap" VerticalScrollBarVisibility="Auto"
+                                         HorizontalScrollBarVisibility="Auto" />
                                 <TextBlock Margin="0,4,0,0" Opacity="0.72" TextWrapping="Wrap"
-                                           Text="取り出す部分は (?&lt;code&gt;…) で指定できます。" />
+                                           Text="上の行から順に試し、最初にコードを取り出せたルールを使います。どれも当てはまらなければ標準の検出を使います。取り出す部分は (?&lt;code&gt;…) か最初の (…) で指定し、省略すると一致した範囲内の 4〜8 桁の数字を使います。" />
+                                <TextBlock Margin="0,10,0,4" Text="書き方の例" />
+                                <TextBlock Opacity="0.72" TextWrapping="Wrap">
+                                    <Run FontFamily="Consolas" Text="番号:\s*(?&lt;code&gt;[A-Z0-9]{6})" /><LineBreak />
+                                    <Run Text="　「番号: A1B2C3」→ A1B2C3" /><LineBreak />
+                                    <Run FontFamily="Consolas" Text="PIN\D*(\d{3})" /><LineBreak />
+                                    <Run Text="　「PIN 123」→ 123" /><LineBreak />
+                                    <Run FontFamily="Consolas" Text="暗証番号は\d+" /><LineBreak />
+                                    <Run Text="　「暗証番号は4567です」→ 4567" />
+                                </TextBlock>
                                 <TextBlock Margin="0,10,0,4" Text="テスト用のメッセージ" />
                                 <TextBox x:Name="PatternSampleBox" MaxLength="4000" Text="確認コードは 123456 です。" />
                                 <CheckBox Margin="0,10,0,4" x:Name="NormalizeOtpBox" Content="検出前に文字を NFKC 正規化する" IsChecked="True" />
