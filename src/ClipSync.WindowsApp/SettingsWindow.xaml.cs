@@ -71,12 +71,11 @@ public partial class SettingsWindow : FluentWindow
         PortBox.Text.Trim(), _sharedKey
     ];
 
-    private void OnSettingsEdited(object sender, RoutedEventArgs e) => UpdateApplyVisibility();
+    private void OnSettingsEdited(object sender, RoutedEventArgs e) => UpdateApplyButton();
 
     private bool HasChanges => !CaptureSettingsValues().SequenceEqual(_savedValues);
 
-    private void UpdateApplyVisibility() =>
-        ApplyButton.Visibility = HasChanges ? Visibility.Visible : Visibility.Collapsed;
+    private void UpdateApplyButton() => ApplyButton.IsEnabled = HasChanges;
 
     private static ApplicationTheme ReadTheme()
     {
@@ -150,7 +149,7 @@ public partial class SettingsWindow : FluentWindow
         {
             _sharedKey = AppConfig.GenerateSecret();
             UpdateKeyDisplay();
-            UpdateApplyVisibility();
+            UpdateApplyButton();
         }
     }
 
@@ -237,7 +236,7 @@ public partial class SettingsWindow : FluentWindow
             await _applySettings(next);
             _savedConfig = next;
             _savedValues = CaptureSettingsValues();
-            UpdateApplyVisibility();
+            UpdateApplyButton();
             return true;
         }
         catch (Exception ex)
