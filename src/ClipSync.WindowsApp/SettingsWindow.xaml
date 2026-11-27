@@ -209,21 +209,6 @@
                         <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
                                  BorderBrush="{DynamicResource SettingsCardBorderBrush}">
                             <StackPanel Margin="18">
-                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="通知" />
-                                <TextBlock Margin="0,3,0,6" Text="認証コードの通知方法" />
-                                <ComboBox x:Name="NotificationModePicker" Width="300" HorizontalAlignment="Left" SelectedIndex="0">
-                                    <ComboBoxItem Content="トースト通知" />
-                                    <ComboBoxItem Content="入力欄の近くにボタン" />
-                                    <ComboBoxItem Content="両方" />
-                                </ComboBox>
-                                <CheckBox Margin="0,12,0,4" x:Name="CopyOtpAutomaticallyBox" Content="通知時にコードを自動コピーする" />
-                                <TextBlock Margin="0,12,0,5" Text="コードボタンの表示時間 (秒)" />
-                                <TextBox Width="120" HorizontalAlignment="Left" x:Name="PopupSecondsBox" />
-                            </StackPanel>
-                        </ui:Card>
-                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
-                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
-                            <StackPanel Margin="18">
                                 <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="検出" />
                                 <CheckBox Margin="0,5" x:Name="DetectOtpBox" Content="認証コードの検出を有効にする" IsChecked="True" />
                                 <TextBlock Margin="0,12,0,5" Text="キーワード (1 行に 1 つ)" />
@@ -271,6 +256,28 @@
                                 </Grid>
                                 <CheckBox Margin="0,10,0,4" x:Name="ShowKeyBox" Content="共有キーを表示" Click="ShowKey_Click" />
                                 <Button Margin="0,8,0,0" HorizontalAlignment="Left" Content="共有キーを再生成" Click="RegenerateKey_Click" />
+                            </StackPanel>
+                        </ui:Card>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="通知">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="0,0,8,0">
+                        <ui:Card Margin="0,0,0,14" Background="{DynamicResource SettingsCardBrush}"
+                                 BorderBrush="{DynamicResource SettingsCardBorderBrush}">
+                            <StackPanel Margin="18">
+                                <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="認証コード" />
+                                <TextBlock Margin="0,3,0,6" Text="通知方法" />
+                                <ComboBox x:Name="NotificationModePicker" Width="300" HorizontalAlignment="Left" SelectedIndex="0">
+                                    <ComboBoxItem Content="トースト通知" />
+                                    <ComboBoxItem Content="入力欄の近くにボタン" />
+                                    <ComboBoxItem Content="両方" />
+                                </ComboBox>
+                                <CheckBox Margin="0,12,0,4" x:Name="CopyOtpAutomaticallyBox" Content="通知時にコードを自動コピーする" />
+                                <TextBlock Margin="0,12,0,5" Text="コードボタンの表示時間 (秒)" />
+                                <TextBox Width="120" HorizontalAlignment="Left" x:Name="PopupSecondsBox" />
                             </StackPanel>
                         </ui:Card>
                     </StackPanel>
