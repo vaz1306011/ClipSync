@@ -7,8 +7,11 @@ namespace ClipSync.WindowsApp;
 
 public partial class SettingsWindow : FluentWindow
 {
-    public SettingsWindow()
+    private readonly Action _showPairingQrCode;
+
+    public SettingsWindow(Action showPairingQrCode)
     {
+        _showPairingQrCode = showPairingQrCode;
         InitializeComponent();
         ApplicationThemeManager.Apply(this);
     }
@@ -19,6 +22,11 @@ public partial class SettingsWindow : FluentWindow
         {
             DragMove();
         }
+    }
+
+    private void ShowPairingQrCode_Click(object sender, RoutedEventArgs e)
+    {
+        _showPairingQrCode();
     }
 
     private void Ok_Click(object sender, RoutedEventArgs e)

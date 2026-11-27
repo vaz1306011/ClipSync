@@ -25,6 +25,42 @@
         </Border>
 
         <TabControl Grid.Row="1" Margin="20,0,20,14">
+            <TabControl.ItemContainerStyle>
+                <Style TargetType="{x:Type TabItem}">
+                    <Setter Property="Padding" Value="9,6" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type TabItem}">
+                                <Grid Background="Transparent" Margin="0,0,2,2">
+                                    <Border x:Name="SelectionFill" CornerRadius="5"
+                                            Background="{TemplateBinding Foreground}" Opacity="0" />
+                                    <Border x:Name="SelectionOutline" CornerRadius="5"
+                                            BorderBrush="{TemplateBinding Foreground}"
+                                            BorderThickness="1" Opacity="0" />
+                                    <ContentPresenter ContentSource="Header" RecognizesAccessKey="True"
+                                                      Margin="{TemplateBinding Padding}"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="SelectionFill" Property="Opacity" Value="0.06" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="SelectionFill" Property="Opacity" Value="0.13" />
+                                        <Setter TargetName="SelectionOutline" Property="Opacity" Value="0.50" />
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter TargetName="SelectionOutline" Property="Opacity" Value="0.75" />
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Opacity" Value="0.55" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.ItemContainerStyle>
             <TabItem Header="一般">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="12">
@@ -120,7 +156,7 @@
                                 <TextBlock Margin="0,0,0,12" FontSize="16" FontWeight="SemiBold" Text="ペアリング" />
                                 <TextBlock Margin="0,0,0,10" Opacity="0.72" Text="QR コードを使って iPhone と接続します。" />
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Margin="0,0,8,0" Content="QR コードを表示" />
+                                    <Button Margin="0,0,8,0" Content="QR コードを表示" Click="ShowPairingQrCode_Click" />
                                     <Button Content="共有キーを再生成" />
                                 </StackPanel>
                             </StackPanel>
