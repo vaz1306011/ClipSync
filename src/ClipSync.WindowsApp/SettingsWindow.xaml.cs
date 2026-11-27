@@ -32,6 +32,21 @@ public partial class SettingsWindow : FluentWindow
         InitializeComponent();
         var theme = (config.DarkTheme ?? (ReadTheme() == ApplicationTheme.Dark))
             ? ApplicationTheme.Dark : ApplicationTheme.Light;
+        ShowValues(config);
+        UpdateKeyDisplay();
+        ApplyTheme(theme);
+        ThemePicker.SelectedIndex = theme == ApplicationTheme.Dark ? 1 : 0;
+        ThemePicker.SelectionChanged += ThemePicker_SelectionChanged;
+
+        _savedValues = CaptureSettingsValues();
+        AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnSettingsEdited));
+        AddHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnSettingsEdited));
+        AddHandler(ToggleButton.CheckedEvent, new RoutedEventHandler(OnSettingsEdited));
+        AddHandler(ToggleButton.UncheckedEvent, new RoutedEventHandler(OnSettingsEdited));
+    }
+
+    private void ShowValues(AppConfig config)
+    {
         StartOnSignInBox.IsChecked = config.StartOnSignIn;
         SyncPausedBox.IsChecked = config.SyncPaused || !config.SyncEnabled;
         SyncTextBox.IsChecked = config.SyncText;
@@ -48,16 +63,6 @@ public partial class SettingsWindow : FluentWindow
         PortBox.Text = config.Port.ToString();
         KeywordsBox.Text = config.OtpKeywords;
         PatternBox.Text = config.OtpPattern;
-        UpdateKeyDisplay();
-        ApplyTheme(theme);
-        ThemePicker.SelectedIndex = theme == ApplicationTheme.Dark ? 1 : 0;
-        ThemePicker.SelectionChanged += ThemePicker_SelectionChanged;
-
-        _savedValues = CaptureSettingsValues();
-        AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnSettingsEdited));
-        AddHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnSettingsEdited));
-        AddHandler(ToggleButton.CheckedEvent, new RoutedEventHandler(OnSettingsEdited));
-        AddHandler(ToggleButton.UncheckedEvent, new RoutedEventHandler(OnSettingsEdited));
     }
 
     private object?[] CaptureSettingsValues() =>
@@ -150,6 +155,21 @@ public partial class SettingsWindow : FluentWindow
             UpdateKeyDisplay();
             UpdateApplyButton();
         }
+    }
+
+    private void ResetSettings_Click(object sender, RoutedEventArgs e)
+    {
+        if (System.Windows.MessageBox.Show(this, "ポート番号を含むすべての設定を初期値に戻しますか？共有キーは変わりません。",
+                Title, System.Windows.MessageBoxButton.YesNo, MessageBoxImage.Warning,
+                MessageBoxResult.No) != MessageBoxResult.Yes)
+            return;
+
+        // Only fills in the window, so Cancel still backs out. The shared key
+        // stays: it identifies the paired devices and has no default.
+        var defaults = new AppConfig();
+        ShowValues(defaults);
+        ThemePicker.SelectedIndex = defaults.DarkTheme == true ? 1 : 0;
+        UpdateApplyButton();
     }
 
     private void TestPattern_Click(object sender, RoutedEventArgs e)
