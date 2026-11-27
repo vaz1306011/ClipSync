@@ -158,8 +158,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
             {
                 if (save)
                     SaveSettings(next);
-                if (!save)
-                    _pushService.UpdateSender(CreatePushSender(next));
+                _pushService.UpdateSender(CreatePushSender(next));
                 _server.UpdateConfig(next);
                 _store.ClearIfDisallowed(next);
                 _config = next;

@@ -73,10 +73,10 @@ public partial class SettingsWindow : FluentWindow
 
     private void OnSettingsEdited(object sender, RoutedEventArgs e) => UpdateApplyVisibility();
 
+    private bool HasChanges => !CaptureSettingsValues().SequenceEqual(_savedValues);
+
     private void UpdateApplyVisibility() =>
-        ApplyButton.Visibility = CaptureSettingsValues().SequenceEqual(_savedValues)
-            ? Visibility.Collapsed
-            : Visibility.Visible;
+        ApplyButton.Visibility = HasChanges ? Visibility.Visible : Visibility.Collapsed;
 
     private static ApplicationTheme ReadTheme()
     {
@@ -179,7 +179,9 @@ public partial class SettingsWindow : FluentWindow
 
     private AppConfig ReadSettings()
     {
-        var next = _savedConfig.Copy();
+        // Start from the file, so hand-edited settings this window doesn't show
+        // (APNs, relay) survive even if they haven't been reloaded.
+        var next = AppConfig.LoadOrCreate();
         next.StartOnSignIn = StartOnSignInBox.IsChecked == true;
         next.SyncPaused = SyncPausedBox.IsChecked == true;
         next.SyncEnabled = true;
@@ -215,6 +217,8 @@ public partial class SettingsWindow : FluentWindow
     {
         if (_saving)
             return false;
+        if (!HasChanges)
+            return true;
 
         _saving = true;
         try
